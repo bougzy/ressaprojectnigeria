@@ -25,7 +25,7 @@ export async function generateMetadata() {
       title: s.seoTitle || s.siteName,
       description: s.seoDescription,
       siteName: s.siteName,
-      images: [{ url: s.logo || "/images/cropped-cropped-logo.jpg" }],
+      images: [{ url: s.logo || "/images/ressa-logo.jpeg" }],
     },
     twitter: {
       card: "summary_large_image",

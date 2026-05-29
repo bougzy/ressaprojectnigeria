@@ -37,7 +37,7 @@ export const DEFAULT_SETTINGS = {
   // ---- Site-wide / brand
   siteName: ORG.name,
   legalName: ORG.legalName,
-  logo: "/images/ressa-logo.png",
+  logo: "/images/ressa-logo.jpeg",
   tagline: ORG.tagline,
 
   // ---- Hero (home)

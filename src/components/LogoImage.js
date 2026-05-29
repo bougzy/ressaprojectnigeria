@@ -9,8 +9,8 @@ import Image from "next/image";
  *
  * `animate` adds a gentle float + hover spin/glow ("party") effect.
  */
-const NEW_LOGO = "/images/ressa-logo.png";
-const FALLBACK = "/images/cropped-cropped-logo.jpg";
+const NEW_LOGO = "/images/ressa-logo.jpeg";
+const FALLBACK = "/images/ressa-logo.jpeg";
 
 export default function LogoImage({
   src,
