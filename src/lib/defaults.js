@@ -1,0 +1,178 @@
+/**
+ * Default site content (used to seed MongoDB and as a graceful fallback if a
+ * given setting has not been customised yet). All of this is editable from the
+ * admin dashboard once seeded.
+ *
+ * Sourced from the original ressaprojectnig.com.ng site + the event flyers.
+ */
+
+export const ORG = {
+  name: "Ressa Project Nigeria",
+  legalName: "Ressa Real Estate Project Ltd",
+  tagline: "Land & Home Ownership for Every Nigerian",
+  email: "contact@ressaprojectnig.com.ng",
+  phones: ["07043331195", "08179298756"],
+  whatsapp: "2347043331195",
+  offices: [
+    {
+      label: "Lagos Office",
+      address:
+        "Suite 98, Tawakalitu Plaza, Opposite NIPCO Filling Station, Afolabi Bus-Stop, Lasu-Isheri Road, Lagos.",
+    },
+    {
+      label: "Ota Office",
+      address:
+        "KM 10, Idiroko Road, Rainbow Bus-Stop, Opposite Christ Apostolic Church, Iyana-Iyesi, Ota, Ogun State.",
+    },
+  ],
+  socials: {
+    facebook: "https://facebook.com",
+    instagram: "https://instagram.com/ressaprojectnig_18",
+    twitter: "https://twitter.com",
+    pinterest: "https://pinterest.com",
+  },
+};
+
+export const DEFAULT_SETTINGS = {
+  // ---- Site-wide / brand
+  siteName: ORG.name,
+  legalName: ORG.legalName,
+  logo: "/images/ressa-logo.png",
+  tagline: ORG.tagline,
+
+  // ---- Hero (home)
+  heroTitle: "Own Land. Build Wealth. Secure Your Future.",
+  heroSubtitle:
+    "Ressa Project Nigeria is a real-estate support scheme making genuine, well-documented land and home ownership affordable for low and average-income earners.",
+  heroPrimaryCtaText: "View Our Estates",
+  heroPrimaryCtaHref: "/projects",
+  heroSecondaryCtaText: "Talk to an Agent",
+  heroSecondaryCtaHref: "/contact",
+
+  // ---- Stats strip
+  stats: [
+    { value: "5+", label: "Years of service" },
+    { value: "2", label: "Estate locations" },
+    { value: "1000+", label: "Happy subscribers" },
+    { value: "100%", label: "Documented titles" },
+  ],
+
+  // ---- About
+  aboutHeading: "Who We Are",
+  aboutBody:
+    "Ressa Project Nigeria is a support scheme for low and average-income earners. Operating as Ressa Real Estate Project Ltd, we help everyday Nigerians become landlords and landladies through affordable, transparent and well-documented land and estate development. Through our PAC Estate and PLC Gardens developments, member conferences and merit-award schemes, we guide subscribers from their first plot to a completed home — backed by proper legal documentation every step of the way.",
+  missionHeading: "Our Mission",
+  missionBody:
+    "To make land and home ownership achievable for every Nigerian, regardless of income, through honest pricing, flexible payment plans and verifiable land titles.",
+  visionHeading: "Our Vision",
+  visionBody:
+    "A Nigeria where the average earner can confidently own property and build generational wealth — a home for all.",
+
+  // ---- What we offer (from the conference flyer)
+  services: [
+    {
+      title: "Affordable Land & Plots",
+      desc: "Genuine, well-documented plots across our PAC Estate and PLC Gardens developments with flexible payment plans.",
+      icon: "land",
+    },
+    {
+      title: "Subscriber Discount Support",
+      desc: "Up to 30% discount support for early subscribers and 20% for all members — making your first plot easier to afford.",
+      icon: "discount",
+    },
+    {
+      title: "Free Land & Merit Rewards",
+      desc: "Win free land and other prizes through our merit-award scheme and Landlords' & Landladies' conferences.",
+      icon: "gift",
+    },
+    {
+      title: "Expert Guidance, Free",
+      desc: "Learn diverse streams of income and sound property investment directly from experienced professionals.",
+      icon: "expert",
+    },
+    {
+      title: "Legal & Documentation Support",
+      desc: "We guide investors through every legal land matter so your ownership is secure and dispute-free.",
+      icon: "legal",
+    },
+    {
+      title: "Community & Events",
+      desc: "Join a growing community of landlords through our annual conferences, golf events and member gatherings.",
+      icon: "community",
+    },
+  ],
+
+  // ---- CTA banner
+  ctaTitle: "Ready to become a landlord?",
+  ctaBody:
+    "Join the next Ressa Landlords' & Landladies' Support Conference and secure your plot today.",
+  ctaButtonText: "Book Your Seat",
+  ctaButtonHref: "/contact",
+
+  // ---- Contact
+  contactHeading: "Get in touch",
+  contactIntro:
+    "Have a question about our estates, payment plans or the next conference? Send us a message and our team will respond promptly.",
+  email: ORG.email,
+  phones: ORG.phones,
+  whatsapp: ORG.whatsapp,
+  offices: ORG.offices,
+  socials: ORG.socials,
+  mapEmbed:
+    "https://www.google.com/maps?q=Lasu-Isheri+Road+Lagos&output=embed",
+
+  // ---- SEO
+  seoTitle:
+    "Ressa Project Nigeria | Affordable Land & Estates in Lagos & Ota",
+  seoDescription:
+    "Ressa Project Nigeria (Ressa Real Estate Project Ltd) helps low and average-income earners own genuine, documented land and homes across Lagos and Ota through PAC Estate and PLC Gardens. Flexible payment plans, discount support and free-land rewards.",
+};
+
+/**
+ * Heuristic categorisation of the downloaded image filenames so every image is
+ * placed somewhere sensible on first seed. The admin can re-categorise later.
+ */
+export function categorise(filename) {
+  const f = filename.toLowerCase();
+  if (f.includes("logo")) return { category: "logo", year: "" };
+  // Branded posters / flyers
+  if (
+    f.startsWith("sc-2") ||
+    f === "ressa.jpg" ||
+    f.startsWith("man-") ||
+    f.startsWith("photo_5832360396361679")
+  )
+    return { category: "flyer", year: "2024" };
+  // 2020 launch / early events
+  if (f.startsWith("img-20200128") || f.startsWith("img-20200130"))
+    return { category: "event", year: "2020" };
+  // April 2024 project handovers & awards
+  if (
+    f.startsWith("img-20240415") ||
+    f.startsWith("1713178") ||
+    f.startsWith("km1_")
+  )
+    return { category: "event", year: "2024" };
+  // August 2024 conference
+  if (f.startsWith("img_20240824") || f.startsWith("1724575645956"))
+    return { category: "event", year: "2024" };
+  // Numbered "latest projects"
+  if (/^\d+-scaled\.jpg$/.test(f) || /^\d+\.jpg$/.test(f))
+    return { category: "project", year: "2024" };
+  // Decorative / stock
+  if (f.startsWith("130-2") || f.startsWith("top-view"))
+    return { category: "misc", year: "" };
+  return { category: "event", year: "" };
+}
+
+export function prettyAlt(filename, category) {
+  const map = {
+    logo: "Ressa Project Nigeria logo",
+    flyer: "Ressa Project Nigeria event flyer",
+    project: "Ressa estate project photo",
+    event: "Ressa Project Nigeria event photo",
+    about: "Ressa Project Nigeria team",
+    misc: "Ressa Project Nigeria",
+  };
+  return map[category] || "Ressa Project Nigeria";
+}

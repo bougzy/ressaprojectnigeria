@@ -1,0 +1,208 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-white text-navy-900 antialiased;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+  .btn-primary {
+    @apply btn bg-brand-500 text-white hover:bg-brand-600 focus:ring-brand-400;
+  }
+  .btn-secondary {
+    @apply btn bg-white text-navy-900 ring-1 ring-inset ring-navy-200 hover:bg-navy-50 focus:ring-navy-400;
+  }
+  .btn-navy {
+    @apply btn bg-navy-900 text-white hover:bg-navy-800 focus:ring-navy-500;
+  }
+  .section {
+    @apply py-14 md:py-20;
+  }
+  .eyebrow {
+    @apply text-sm font-bold uppercase tracking-wider text-brand-500;
+  }
+  .h-section {
+    @apply text-2xl font-extrabold tracking-tight text-navy-900 sm:text-3xl md:text-4xl;
+  }
+  .card {
+    @apply rounded-2xl bg-white p-6 shadow-sm ring-1 ring-navy-100;
+  }
+  .input {
+    @apply w-full rounded-lg border border-navy-200 px-4 py-2.5 text-sm outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-navy-700;
+  }
+}
+
+/* ===========================================================================
+   ANIMATIONS — "pop & party"
+   =========================================================================== */
+
+/* Fade / slide reveals */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease both; }
+
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(0.8) translateY(20px); }
+  60% { opacity: 1; transform: scale(1.04) translateY(-2px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Scroll-reveal wrapper (toggled by Reveal.js) */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-zoom { transform: scale(0.92); }
+.reveal-zoom.in-view { transform: scale(1); }
+
+/* Logo: gentle float, glow, hover spin */
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(236, 65, 9, 0.35); }
+  50% { box-shadow: 0 0 26px 6px rgba(236, 65, 9, 0.45); }
+}
+.logo-anim {
+  animation: floaty 4s ease-in-out infinite, glowPulse 3.2s ease-in-out infinite;
+  transition: transform 0.6s ease;
+  border-radius: 9999px;
+}
+.logo-anim:hover {
+  transform: rotate(360deg) scale(1.08);
+}
+.group:hover .logo-anim {
+  transform: rotate(360deg) scale(1.08);
+}
+
+/* Animated gradient background (hero) */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animated-gradient {
+  background: linear-gradient(120deg, #0f2347, #21437f, #c42f0a, #0f2347);
+  background-size: 300% 300%;
+  animation: gradientShift 14s ease infinite;
+}
+
+/* Floating blobs behind hero */
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(20px, -24px) scale(1.1); }
+  66% { transform: translate(-18px, 14px) scale(0.95); }
+}
+.blob { animation: blob 9s ease-in-out infinite; }
+
+/* Button shine sweep + pop */
+.btn { position: relative; overflow: hidden; }
+.btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  transform: skewX(-20deg);
+  transition: left 0.6s ease;
+}
+.btn:hover::after { left: 130%; }
+.btn:hover { transform: translateY(-2px) scale(1.03); }
+.btn:active { transform: translateY(0) scale(0.98); }
+
+/* Card hover lift */
+.card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+
+/* Confetti ("party") */
+@keyframes confettiFall {
+  0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+.confetti-piece {
+  position: absolute;
+  top: 0;
+  width: 10px;
+  height: 14px;
+  border-radius: 2px;
+  animation: confettiFall linear forwards;
+  will-change: transform;
+}
+
+/* Bouncing chevron / pulse ring */
+@keyframes pulseRing {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  70% { transform: scale(1.6); opacity: 0; }
+  100% { opacity: 0; }
+}
+.pulse-ring::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: #25d366;
+  animation: pulseRing 2s ease-out infinite;
+  z-index: -1;
+}
+
+/* Marquee */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.marquee-track {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: marquee 22s linear infinite;
+}
+
+/* Shimmer underline for eyebrows */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+.hover-wiggle:hover { animation: wiggle 0.4s ease-in-out; }
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .logo-anim,
+  .animated-gradient,
+  .blob,
+  .marquee-track,
+  .confetti-piece,
+  .pulse-ring::before {
+    animation: none !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+}

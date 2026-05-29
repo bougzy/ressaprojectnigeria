@@ -1,0 +1,26 @@
+{
+  "name": "ressa-realestate",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ressa Project Nigeria - real estate / land support scheme website (Next.js + MongoDB)",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "seed": "node scripts/seed.mjs"
+  },
+  "dependencies": {
+    "jose": "^5.9.6",
+    "mongoose": "^8.7.0",
+    "next": "^14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "dotenv": "^16.4.5",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.14"
+  }
+}
