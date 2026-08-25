@@ -44,6 +44,39 @@ const SettingSchema = new Schema(
 );
 
 /* -------------------------------------------------------------------------- */
+/* Section — dynamic, admin-managed building blocks of the homepage           */
+/* -------------------------------------------------------------------------- */
+const SectionSchema = new Schema(
+  {
+    key: { type: String, required: true, unique: true, index: true },
+    // hero | marquee | stats | richtext | services | gallery | video | cta | testimonials | faq
+    type: { type: String, required: true },
+    page: { type: String, default: "home", index: true },
+    order: { type: Number, default: 0 },
+    visible: { type: Boolean, default: true },
+    // white | light | dark | brand | gradient
+    bg: { type: String, default: "white" },
+    eyebrow: { type: String, default: "" },
+    title: { type: String, default: "" },
+    subtitle: { type: String, default: "" },
+    body: { type: String, default: "" },
+    image: { type: String, default: "" },
+    imagePosition: { type: String, default: "right" }, // left | right
+    ctaText: { type: String, default: "" },
+    ctaHref: { type: String, default: "" },
+    ctaText2: { type: String, default: "" },
+    ctaHref2: { type: String, default: "" },
+    galleryCategory: { type: String, default: "" }, // "" = any, or project/event/flyer/featured
+    galleryLimit: { type: Number, default: 8 },
+    videoLimit: { type: Number, default: 2 },
+    // Flexible per-type payload: stats -> [{value,label}], services -> [{title,desc,icon}],
+    // testimonials -> [{name,role,quote}], faq -> [{q,a}], marquee -> ["word", ...]
+    items: { type: Schema.Types.Mixed, default: [] },
+  },
+  { timestamps: true }
+);
+
+/* -------------------------------------------------------------------------- */
 /* Message — contact form submissions                                         */
 /* -------------------------------------------------------------------------- */
 const MessageSchema = new Schema(
@@ -61,5 +94,6 @@ const MessageSchema = new Schema(
 export const GalleryImage =
   models.GalleryImage || model("GalleryImage", GalleryImageSchema);
 export const Video = models.Video || model("Video", VideoSchema);
+export const Section = models.Section || model("Section", SectionSchema);
 export const Setting = models.Setting || model("Setting", SettingSchema);
 export const Message = models.Message || model("Message", MessageSchema);

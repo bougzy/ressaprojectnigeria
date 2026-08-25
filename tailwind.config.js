@@ -1,4 +1,20 @@
 /** @type {import('tailwindcss').Config} */
+
+// Builds a Tailwind color object backed by a CSS variable scale, so the whole
+// palette can be changed at runtime from the admin Theme panel without a
+// rebuild — see src/lib/theme.js + src/components/ThemeStyle.js.
+function cssVarScale(name) {
+  const stops = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900];
+  const scale = {};
+  for (const s of stops) {
+    scale[s] = ({ opacityValue }) =>
+      opacityValue
+        ? `rgb(var(--${name}-${s}) / ${opacityValue})`
+        : `rgb(var(--${name}-${s}))`;
+  }
+  return scale;
+}
+
 module.exports = {
   content: [
     "./src/app/**/*.{js,jsx}",
@@ -7,34 +23,17 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Brand palette derived from the Ressa flyers (orange/navy)
-        brand: {
-          50: "#fff5ed",
-          100: "#ffe8d4",
-          200: "#ffcda8",
-          300: "#ffa971",
-          400: "#ff7a38",
-          500: "#fc5a13", // primary orange
-          600: "#ed4109",
-          700: "#c42f0a",
-          800: "#9c2710",
-          900: "#7e2310",
-        },
-        navy: {
-          50: "#eef4fb",
-          100: "#d9e6f5",
-          200: "#b9d0ec",
-          300: "#8bb0df",
-          400: "#5687cd",
-          500: "#3568bb",
-          600: "#26519d",
-          700: "#21437f",
-          800: "#1f3a6a",
-          900: "#0f2347", // deep navy
-        },
+        // Brand palette — driven by CSS variables set from the admin Theme
+        // panel (falls back to the original orange/navy if unset).
+        brand: cssVarScale("brand"),
+        navy: cssVarScale("navy"),
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        heading: ["var(--font-heading)", "var(--font-sans)", "system-ui", "sans-serif"],
+      },
+      borderRadius: {
+        theme: "var(--radius-base, 0.75rem)",
       },
       container: {
         center: true,

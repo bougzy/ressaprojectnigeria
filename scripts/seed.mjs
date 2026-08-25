@@ -16,7 +16,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 
 // Pull in defaults + helpers (plain ESM import of the lib file).
-const { DEFAULT_SETTINGS, categorise, prettyAlt } = await import(
+const { DEFAULT_SETTINGS, DEFAULT_SECTIONS, categorise, prettyAlt } = await import(
   path.join(ROOT, "src/lib/defaults.js")
 );
 
@@ -49,6 +49,34 @@ const Video = mongoose.model(
 const Setting = mongoose.model(
   "Setting",
   new Schema({ key: String, value: Schema.Types.Mixed }, { timestamps: true })
+);
+const Section = mongoose.model(
+  "Section",
+  new Schema(
+    {
+      key: String,
+      type: String,
+      page: String,
+      order: Number,
+      visible: Boolean,
+      bg: String,
+      eyebrow: String,
+      title: String,
+      subtitle: String,
+      body: String,
+      image: String,
+      imagePosition: String,
+      ctaText: String,
+      ctaHref: String,
+      ctaText2: String,
+      ctaHref2: String,
+      galleryCategory: String,
+      galleryLimit: Number,
+      videoLimit: Number,
+      items: Schema.Types.Mixed,
+    },
+    { timestamps: true }
+  )
 );
 
 async function main() {
@@ -112,6 +140,11 @@ async function main() {
     },
   ]);
   console.log("✓ Inserted starter videos");
+
+  // ---- 4. Homepage sections -------------------------------------------------
+  await Section.deleteMany({ page: "home" });
+  await Section.insertMany(DEFAULT_SECTIONS.map((s) => ({ ...s, page: "home" })));
+  console.log(`✓ Inserted ${DEFAULT_SECTIONS.length} homepage sections`);
 
   await mongoose.disconnect();
   console.log("✓ Done. You can now run: npm run dev");

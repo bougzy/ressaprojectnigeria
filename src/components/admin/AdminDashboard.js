@@ -6,16 +6,20 @@ import ImagesManager from "./ImagesManager";
 import VideosManager from "./VideosManager";
 import SettingsManager from "./SettingsManager";
 import MessagesManager from "./MessagesManager";
+import SectionsManager from "./SectionsManager";
+import ThemeManager from "./ThemeManager";
 
 const TABS = [
+  { key: "sections", label: "Homepage Sections", icon: "🧱" },
+  { key: "theme", label: "Theme (Colours & Fonts)", icon: "🎨" },
   { key: "images", label: "Images & Gallery", icon: "🖼️" },
   { key: "videos", label: "Videos", icon: "🎬" },
-  { key: "content", label: "Site Text & Settings", icon: "📝" },
+  { key: "content", label: "Site Text & SEO", icon: "📝" },
   { key: "messages", label: "Messages", icon: "✉️" },
 ];
 
 export default function AdminDashboard() {
-  const [tab, setTab] = useState("images");
+  const [tab, setTab] = useState("sections");
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
 
@@ -103,6 +107,8 @@ export default function AdminDashboard() {
           </p>
         </header>
 
+        {tab === "sections" && <SectionsManager />}
+        {tab === "theme" && <ThemeManager />}
         {tab === "images" && <ImagesManager />}
         {tab === "videos" && <VideosManager />}
         {tab === "content" && <SettingsManager />}

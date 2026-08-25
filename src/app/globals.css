@@ -3,7 +3,31 @@
 @tailwind utilities;
 
 :root {
+  /* Fallback theme values — overridden per-request by <ThemeStyle> using the
+     admin's saved colours/fonts (src/lib/theme.js). */
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-heading: "Inter", system-ui, -apple-system, sans-serif;
+  --radius-base: 0.75rem;
+  --brand-50: 255 245 237;
+  --brand-100: 255 232 212;
+  --brand-200: 255 205 168;
+  --brand-300: 255 169 113;
+  --brand-400: 255 122 56;
+  --brand-500: 252 90 19;
+  --brand-600: 237 65 9;
+  --brand-700: 196 47 10;
+  --brand-800: 156 39 16;
+  --brand-900: 126 35 16;
+  --navy-50: 238 244 251;
+  --navy-100: 217 230 245;
+  --navy-200: 185 208 236;
+  --navy-300: 139 176 223;
+  --navy-400: 86 135 205;
+  --navy-500: 53 104 187;
+  --navy-600: 38 81 157;
+  --navy-700: 33 67 127;
+  --navy-800: 31 58 106;
+  --navy-900: 15 35 71;
 }
 
 html {
@@ -11,7 +35,13 @@ html {
 }
 
 body {
-  @apply bg-white text-navy-900 antialiased;
+  @apply bg-white text-navy-900 antialiased font-sans;
+}
+
+@layer base {
+  h1, h2, h3, h4, .font-heading {
+    font-family: var(--font-heading);
+  }
 }
 
 @layer components {

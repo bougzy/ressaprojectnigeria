@@ -9,22 +9,11 @@ const TEXT_GROUPS = [
       ["siteName", "Site name", "text"],
       ["legalName", "Legal / company name", "text"],
       ["tagline", "Tagline", "text"],
-      ["logo", "Logo path", "text"],
+      ["logo", "Logo path (pick from Images & Gallery, then paste its path here)", "text"],
     ],
   },
   {
-    group: "Hero (homepage top)",
-    fields: [
-      ["heroTitle", "Hero title", "text"],
-      ["heroSubtitle", "Hero subtitle", "textarea"],
-      ["heroPrimaryCtaText", "Primary button text", "text"],
-      ["heroPrimaryCtaHref", "Primary button link", "text"],
-      ["heroSecondaryCtaText", "Secondary button text", "text"],
-      ["heroSecondaryCtaHref", "Secondary button link", "text"],
-    ],
-  },
-  {
-    group: "About",
+    group: "About page",
     fields: [
       ["aboutHeading", "About heading", "text"],
       ["aboutBody", "About body", "textarea"],
@@ -35,16 +24,7 @@ const TEXT_GROUPS = [
     ],
   },
   {
-    group: "Call-to-action banner",
-    fields: [
-      ["ctaTitle", "CTA title", "text"],
-      ["ctaBody", "CTA body", "textarea"],
-      ["ctaButtonText", "CTA button text", "text"],
-      ["ctaButtonHref", "CTA button link", "text"],
-    ],
-  },
-  {
-    group: "Contact",
+    group: "Contact page",
     fields: [
       ["contactHeading", "Contact heading", "text"],
       ["contactIntro", "Contact intro", "textarea"],
@@ -58,14 +38,14 @@ const TEXT_GROUPS = [
     fields: [
       ["seoTitle", "SEO title", "text"],
       ["seoDescription", "SEO meta description", "textarea"],
+      ["seoKeywords", "SEO keywords (comma-separated)", "textarea"],
+      ["canonicalUrl", "Canonical site URL (e.g. https://yourdomain.com)", "text"],
     ],
   },
 ];
 
 // Complex (array/object) fields edited as JSON.
 const JSON_FIELDS = [
-  ["stats", "Stats strip — [{value,label}]"],
-  ["services", "Services — [{title,desc,icon}] (icons: land,discount,gift,expert,legal,community)"],
   ["offices", "Offices — [{label,address}]"],
   ["phones", "Phone numbers — [\"...\"]"],
   ["socials", "Socials — {facebook,instagram,twitter,pinterest}"],
@@ -121,6 +101,13 @@ export default function SettingsManager() {
 
   return (
     <div className="max-w-3xl space-y-8">
+      <div className="rounded-xl bg-brand-50 p-4 text-sm text-brand-800 ring-1 ring-brand-100">
+        Looking for the hero, stats, services, or call-to-action banner?
+        Those are now managed as add/remove-able blocks under the{" "}
+        <strong>Sections</strong> tab. This tab covers site-wide brand
+        details, the About &amp; Contact pages, and SEO.
+      </div>
+
       {TEXT_GROUPS.map((g) => (
         <section key={g.group} className="card">
           <h3 className="mb-4 font-bold text-navy-900">{g.group}</h3>
@@ -161,7 +148,7 @@ export default function SettingsManager() {
               <label className="label">{label}</label>
               <textarea
                 className="input font-mono text-xs"
-                rows={key === "services" ? 10 : 5}
+                rows={5}
                 value={jsonText[key] ?? ""}
                 onChange={(e) =>
                   setJsonText((p) => ({ ...p, [key]: e.target.value }))

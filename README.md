@@ -26,11 +26,18 @@ dashboard** so the whole site can be managed without touching code.
 
 **Admin dashboard** (`/admin`)
 - **Hardcoded login** (set in `.env.local`).
+- **Homepage Sections** – full drag-free CMS: add, remove, reorder, show/hide
+  and edit every block on the homepage (hero, trust marquee, stats, text +
+  image, service cards, image galleries, video block, testimonials, FAQ,
+  call-to-action banner). Nothing about the homepage layout is hardcoded.
+- **Theme (Colours & Fonts)** – pick two brand colours (a full 50–900 shade
+  scale is generated automatically) and heading/body fonts from a curated
+  Google Fonts list — applied site-wide instantly, no rebuild needed.
 - **Images & Gallery** – add/upload, change the actual file, edit alt/caption/
   category/year/featured, delete. Every original image is pre-loaded.
 - **Videos** – add / edit / delete (YouTube links auto-convert to embeds).
-- **Site Text & Settings** – edit hero, about, services, stats, CTA, contact
-  details, socials and SEO — all without code.
+- **Site Text & SEO** – edit brand details, About & Contact page copy, SEO
+  title/description/keywords and canonical URL — all without code.
 - **Messages** – read / mark / delete contact-form submissions.
 
 ---
@@ -101,7 +108,7 @@ npm run start
 ```
 ressa-realestate/
 ├── public/images/             # all 58 source images (logo, flyers, events…)
-├── scripts/seed.mjs           # seeds images + settings + videos
+├── scripts/seed.mjs           # seeds images + settings + videos + homepage sections
 ├── src/
 │   ├── middleware.js          # protects /admin and /api/admin
 │   ├── lib/

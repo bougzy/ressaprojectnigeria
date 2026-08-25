@@ -5,6 +5,7 @@
  *
  * Sourced from the original ressaprojectnig.com.ng site + the event flyers.
  */
+import { DEFAULT_THEME } from "./theme";
 
 export const ORG = {
   name: "Ressa Project Nigeria",
@@ -126,7 +127,206 @@ export const DEFAULT_SETTINGS = {
     "Ressa Project Nigeria | Affordable Land & Estates in Lagos & Ota",
   seoDescription:
     "Ressa Project Nigeria (Ressa Real Estate Project Ltd) helps low and average-income earners own genuine, documented land and homes across Lagos and Ota through PAC Estate and PLC Gardens. Flexible payment plans, discount support and free-land rewards.",
+  seoKeywords:
+    "real estate Nigeria, land for sale Lagos, land for sale Ota, affordable land Nigeria, PAC Estate, PLC Gardens, become a landlord Nigeria",
+  canonicalUrl: "https://ressaprojectnig.com.ng",
+
+  // ---- Theme (colours + fonts) — see src/lib/theme.js
+  theme: DEFAULT_THEME,
 };
+
+/**
+ * Default homepage sections — this is what the site ships with, and is fully
+ * editable/removable/re-orderable from the admin "Sections" tab. Re-running
+ * `npm run seed` restores this default layout.
+ */
+export const DEFAULT_SECTIONS = [
+  {
+    key: "hero",
+    type: "hero",
+    order: 0,
+    visible: true,
+    bg: "gradient",
+    eyebrow: ORG.name,
+    title: "Own Land. Build Wealth. Secure Your Future.",
+    subtitle:
+      "Ressa Project Nigeria is a real-estate support scheme making genuine, well-documented land and home ownership affordable for low and average-income earners.",
+    image: "",
+    ctaText: "View Our Estates",
+    ctaHref: "/projects",
+    ctaText2: "Talk to an Agent",
+    ctaHref2: "/contact",
+    items: [],
+  },
+  {
+    key: "trust-marquee",
+    type: "marquee",
+    order: 1,
+    visible: true,
+    bg: "brand",
+    items: [
+      "Genuine Land Titles",
+      "Flexible Payment Plans",
+      "PAC Estate",
+      "PLC Gardens",
+      "Free-Land Rewards",
+      "Home for All",
+      "Lagos • Ota",
+    ],
+  },
+  {
+    key: "stats",
+    type: "stats",
+    order: 2,
+    visible: true,
+    bg: "white",
+    items: [
+      { value: "5+", label: "Years of service" },
+      { value: "2", label: "Estate locations" },
+      { value: "1000+", label: "Happy subscribers" },
+      { value: "100%", label: "Documented titles" },
+    ],
+  },
+  {
+    key: "about-teaser",
+    type: "richtext",
+    order: 3,
+    visible: true,
+    bg: "white",
+    eyebrow: "Who We Are",
+    title: "A genuine path to land & home ownership",
+    body: "Ressa Project Nigeria is a support scheme for low and average-income earners. Operating as Ressa Real Estate Project Ltd, we help everyday Nigerians become landlords and landladies through affordable, transparent and well-documented land and estate development.",
+    image: "",
+    imagePosition: "left",
+    ctaText: "Learn more about us",
+    ctaHref: "/about",
+    items: [],
+  },
+  {
+    key: "services",
+    type: "services",
+    order: 4,
+    visible: true,
+    bg: "light",
+    eyebrow: "What we offer",
+    title: "Everything you need to own property",
+    items: [
+      {
+        title: "Affordable Land & Plots",
+        desc: "Genuine, well-documented plots across our PAC Estate and PLC Gardens developments with flexible payment plans.",
+        icon: "land",
+      },
+      {
+        title: "Subscriber Discount Support",
+        desc: "Up to 30% discount support for early subscribers and 20% for all members — making your first plot easier to afford.",
+        icon: "discount",
+      },
+      {
+        title: "Free Land & Merit Rewards",
+        desc: "Win free land and other prizes through our merit-award scheme and Landlords' & Landladies' conferences.",
+        icon: "gift",
+      },
+      {
+        title: "Expert Guidance, Free",
+        desc: "Learn diverse streams of income and sound property investment directly from experienced professionals.",
+        icon: "expert",
+      },
+      {
+        title: "Legal & Documentation Support",
+        desc: "We guide investors through every legal land matter so your ownership is secure and dispute-free.",
+        icon: "legal",
+      },
+      {
+        title: "Community & Events",
+        desc: "Join a growing community of landlords through our annual conferences, golf events and member gatherings.",
+        icon: "community",
+      },
+    ],
+  },
+  {
+    key: "featured-projects",
+    type: "gallery",
+    order: 5,
+    visible: true,
+    bg: "white",
+    eyebrow: "Our work",
+    title: "Latest projects & estates",
+    galleryCategory: "project",
+    galleryLimit: 8,
+    ctaText: "View all",
+    ctaHref: "/projects",
+    items: [],
+  },
+  {
+    key: "events",
+    type: "gallery",
+    order: 6,
+    visible: true,
+    bg: "light",
+    eyebrow: "Community",
+    title: "Moments from our events",
+    subtitle:
+      "Conferences, award presentations and member gatherings from across the years.",
+    galleryCategory: "event",
+    galleryLimit: 8,
+    ctaText: "See full gallery",
+    ctaHref: "/projects",
+    items: [],
+  },
+  {
+    key: "videos",
+    type: "video",
+    order: 7,
+    visible: true,
+    bg: "white",
+    eyebrow: "Ressa videos",
+    title: "Watch & learn",
+    videoLimit: 2,
+    items: [],
+  },
+  {
+    key: "testimonials",
+    type: "testimonials",
+    order: 8,
+    visible: false,
+    bg: "light",
+    eyebrow: "Testimonials",
+    title: "What our subscribers say",
+    items: [
+      {
+        name: "A. Subscriber",
+        role: "PAC Estate landowner",
+        quote: "Ressa made it possible for me to finally own my own plot with a clear, honest payment plan.",
+      },
+    ],
+  },
+  {
+    key: "faq",
+    type: "faq",
+    order: 9,
+    visible: false,
+    bg: "white",
+    eyebrow: "FAQ",
+    title: "Frequently asked questions",
+    items: [
+      {
+        q: "Are Ressa land titles genuine and documented?",
+        a: "Yes — every plot comes with proper legal documentation and our team guides subscribers through the full process.",
+      },
+    ],
+  },
+  {
+    key: "cta-banner",
+    type: "cta",
+    order: 10,
+    visible: true,
+    bg: "gradient",
+    title: "Ready to become a landlord?",
+    body: "Join the next Ressa Landlords' & Landladies' Support Conference and secure your plot today.",
+    ctaText: "Book Your Seat",
+    ctaHref: "/contact",
+  },
+];
 
 /**
  * Heuristic categorisation of the downloaded image filenames so every image is
