@@ -1,6 +1,12 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/ressa";
+// Falls back to the project's MongoDB Atlas cluster if MONGODB_URI isn't set
+// in the environment (e.g. on Vercel), so no manual env var setup is required.
+// You can still override this by setting MONGODB_URI in Vercel's project
+// settings — that will always take precedence over this default.
+const MONGODB_URI =
+  process.env.MONGODB_URI ||
+  "mongodb+srv://stockpulse:stockpulse@stockpulse.k7rlq2w.mongodb.net/stockpulse";
 
 /**
  * Cached connection across hot-reloads in dev and across lambda invocations.
