@@ -6,6 +6,7 @@ import Reveal from "@/components/anim/Reveal";
 import Confetti from "@/components/anim/Confetti";
 import CountUp from "@/components/anim/CountUp";
 import LogoImage from "@/components/LogoImage";
+import EventsCarousel from "./EventsCarousel";
 
 const BG = {
   white: "bg-white",
@@ -44,6 +45,10 @@ export default async function SectionRenderer({ section, videos = [], fallbackIm
       return <Faq section={section} dark={dark} />;
     case "cta":
       return <Cta section={section} />;
+    case "carousel":
+      return <EventsCarouselSection section={section} dark={dark} />;
+    case "imageBlock":
+      return <ImageBlock section={section} fallbackImage={fallbackImage} />;
     default:
       return null;
   }
@@ -348,5 +353,51 @@ function Cta({ section }) {
         )}
       </Reveal>
     </section>
+  );
+}
+
+/* ------------------------------ EVENTS CAROUSEL ----------------------------- */
+function EventsCarouselSection({ section, dark }) {
+  const items = Array.isArray(section.items) ? section.items : [];
+  if (!items.length) return null;
+  return (
+    <Wrap bg={section.bg} className="section">
+      <div className="container">
+        {(section.eyebrow || section.title || section.subtitle) && (
+          <div className="mx-auto mb-10 max-w-2xl text-center">
+            {section.eyebrow && <span className="eyebrow">{section.eyebrow}</span>}
+            {section.title && <h2 className="h-section mt-2">{section.title}</h2>}
+            {section.subtitle && (
+              <p className={`mt-3 ${dark ? "text-navy-100" : "text-navy-600"}`}>{section.subtitle}</p>
+            )}
+          </div>
+        )}
+        <EventsCarousel items={items} />
+      </div>
+    </Wrap>
+  );
+}
+
+/* --------------------------------- IMAGE BLOCK ------------------------------ */
+function ImageBlock({ section, fallbackImage }) {
+  const img = section.image || fallbackImage;
+  if (!img) return null;
+  return (
+    <Wrap bg={section.bg} className="section">
+      <div className="container flex flex-col items-center text-center">
+        <div className="w-full max-w-3xl overflow-hidden rounded-2xl shadow-lg ring-1 ring-navy-100">
+          <Image
+            src={img}
+            alt={section.body || "Ressa Project Nigeria"}
+            width={1200}
+            height={700}
+            className="h-auto w-full object-cover"
+          />
+        </div>
+        {section.body && (
+          <p className="mt-6 max-w-2xl text-navy-600">{section.body}</p>
+        )}
+      </div>
+    </Wrap>
   );
 }

@@ -326,6 +326,32 @@ export const DEFAULT_SECTIONS = [
     ctaText: "Book Your Seat",
     ctaHref: "/contact",
   },
+  {
+    key: "events-carousel",
+    type: "carousel",
+    order: 11,
+    visible: true,
+    bg: "light",
+    eyebrow: "Community",
+    title: "Our Events",
+    subtitle: "A look back at our conferences, award nights and member gatherings.",
+    items: [
+      { type: "image", src: "/images/1713178107650.jpg", caption: "" },
+      { type: "image", src: "/images/1713178111141.jpg", caption: "" },
+      { type: "image", src: "/images/1713178113592.jpg", caption: "" },
+      { type: "image", src: "/images/1713178117287.jpg", caption: "" },
+    ],
+  },
+  {
+    key: "image-text-block",
+    type: "imageBlock",
+    order: 12,
+    visible: true,
+    bg: "white",
+    image: "",
+    body: "",
+    items: [],
+  },
 ];
 
 /**

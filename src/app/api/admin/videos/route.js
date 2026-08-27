@@ -1,18 +1,9 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { Video } from "@/lib/models";
+import { normalizeYouTube } from "@/lib/youtube";
 
 export const dynamic = "force-dynamic";
-
-function normalizeYouTube(url) {
-  if (!url) return url;
-  // Convert common watch/share links to embeddable form
-  const watch = url.match(/[?&]v=([\w-]+)/);
-  if (watch) return `https://www.youtube.com/embed/${watch[1]}`;
-  const short = url.match(/youtu\.be\/([\w-]+)/);
-  if (short) return `https://www.youtube.com/embed/${short[1]}`;
-  return url;
-}
 
 export async function GET() {
   await dbConnect();

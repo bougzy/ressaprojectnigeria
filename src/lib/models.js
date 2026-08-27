@@ -49,7 +49,8 @@ const SettingSchema = new Schema(
 const SectionSchema = new Schema(
   {
     key: { type: String, required: true, unique: true, index: true },
-    // hero | marquee | stats | richtext | services | gallery | video | cta | testimonials | faq
+    // hero | marquee | stats | richtext | services | gallery | video | cta |
+    // testimonials | faq | carousel | imageBlock
     type: { type: String, required: true },
     page: { type: String, default: "home", index: true },
     order: { type: Number, default: 0 },

@@ -48,6 +48,31 @@ export async function getVideos() {
 }
 
 /**
+ * Ensures every section defined in DEFAULT_SECTIONS exists in the DB for the
+ * homepage — inserting only the ones that are missing (new defaults added in
+ * an update), without touching or resetting anything the admin has already
+ * customised. Safe to call on every request.
+ */
+export async function ensureHomeSectionsSeeded() {
+  await dbConnect();
+  const existing = await Section.find({ page: "home" }).lean();
+  if (!existing.length) {
+    await Section.insertMany(
+      DEFAULT_SECTIONS.map((s) => ({ ...s, page: "home" }))
+    );
+    return;
+  }
+  const existingKeys = new Set(existing.map((s) => s.key));
+  const missing = DEFAULT_SECTIONS.filter((s) => !existingKeys.has(s.key));
+  if (missing.length) {
+    const maxOrder = existing.reduce((m, s) => Math.max(m, s.order || 0), -1);
+    await Section.insertMany(
+      missing.map((s, i) => ({ ...s, page: "home", order: maxOrder + 1 + i }))
+    );
+  }
+}
+
+/**
  * Returns the ordered list of sections for a given page (default "home").
  * Falls back to the built-in defaults if none have been seeded/created yet,
  * so the site never renders blank.
@@ -55,6 +80,7 @@ export async function getVideos() {
 export async function getSections(page = "home", { onlyVisible = true } = {}) {
   try {
     await dbConnect();
+    if (page === "home") await ensureHomeSectionsSeeded();
     const q = { page };
     if (onlyVisible) q.visible = { $ne: false };
     const rows = await Section.find(q).sort({ order: 1, createdAt: 1 }).lean();

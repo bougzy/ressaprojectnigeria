@@ -1,21 +1,20 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { Section } from "@/lib/models";
-import { DEFAULT_SECTIONS } from "@/lib/defaults";
+import { ensureHomeSectionsSeeded } from "@/lib/content";
+import { normalizeYouTube } from "@/lib/youtube";
 
 export const dynamic = "force-dynamic";
 
 // List all sections for a page (default "home"), including hidden ones.
-// Seeds the DB with the built-in defaults on first load so the admin has
-// something to edit immediately.
+// Seeds the DB with the built-in defaults on first load (and back-fills any
+// new default sections added in an update) so the admin always has
+// something sensible to edit, without ever resetting their customisations.
 export async function GET(req) {
   await dbConnect();
   const page = req.nextUrl.searchParams.get("page") || "home";
-  let rows = await Section.find({ page }).sort({ order: 1, createdAt: 1 }).lean();
-  if (!rows.length && page === "home") {
-    await Section.insertMany(DEFAULT_SECTIONS.map((s) => ({ ...s, page: "home" })));
-    rows = await Section.find({ page }).sort({ order: 1, createdAt: 1 }).lean();
-  }
+  if (page === "home") await ensureHomeSectionsSeeded();
+  const rows = await Section.find({ page }).sort({ order: 1, createdAt: 1 }).lean();
   return NextResponse.json(rows.map((r) => ({ ...r, _id: r._id.toString() })));
 }
 
@@ -43,6 +42,13 @@ export async function POST(req) {
     key = `${baseKey}-${++n}`;
   }
 
+  const rawItems = body.items ?? [];
+  const items = Array.isArray(rawItems)
+    ? rawItems.map((it) =>
+        it && it.type === "video" ? { ...it, src: normalizeYouTube(it.src) } : it
+      )
+    : rawItems;
+
   const doc = await Section.create({
     key,
     type: body.type,
@@ -63,7 +69,7 @@ export async function POST(req) {
     galleryCategory: body.galleryCategory || "",
     galleryLimit: body.galleryLimit ?? 8,
     videoLimit: body.videoLimit ?? 2,
-    items: body.items ?? [],
+    items,
   });
   return NextResponse.json({ ...doc.toObject(), _id: doc._id.toString() });
 }

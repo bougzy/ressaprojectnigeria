@@ -13,6 +13,8 @@ const TYPE_LABELS = {
   testimonials: "💬 Testimonials",
   faq: "❓ FAQ",
   cta: "📣 Call-to-action banner",
+  carousel: "🎠 Photo & video carousel",
+  imageBlock: "🖼️ Simple image block",
 };
 
 const BG_OPTIONS = [
@@ -29,6 +31,7 @@ function defaultItemsFor(type) {
   if (type === "testimonials") return [{ name: "Happy customer", role: "Subscriber", quote: "Great experience!" }];
   if (type === "faq") return [{ q: "Question?", a: "Answer." }];
   if (type === "marquee") return ["New highlight"];
+  if (type === "carousel") return [];
   return [];
 }
 
@@ -89,6 +92,129 @@ function ImagePicker({ value, onChange }) {
   );
 }
 
+function CarouselItemsEditor({ items, onChange }) {
+  const [picking, setPicking] = useState(false);
+  const [images, setImages] = useState([]);
+  const [videoUrl, setVideoUrl] = useState("");
+  const [videoCaption, setVideoCaption] = useState("");
+
+  async function openPicker() {
+    const res = await fetch("/api/admin/images");
+    setImages(await res.json());
+    setPicking(true);
+  }
+
+  function addImage(src) {
+    onChange([...items, { type: "image", src, caption: "" }]);
+    setPicking(false);
+  }
+
+  function addVideo() {
+    if (!videoUrl.trim()) return;
+    onChange([...items, { type: "video", src: videoUrl.trim(), caption: videoCaption.trim() }]);
+    setVideoUrl("");
+    setVideoCaption("");
+  }
+
+  function updateCaption(i, caption) {
+    onChange(items.map((it, idx) => (idx === i ? { ...it, caption } : it)));
+  }
+
+  function remove(i) {
+    onChange(items.filter((_, idx) => idx !== i));
+  }
+
+  function move(i, dir) {
+    const j = dir === "up" ? i - 1 : i + 1;
+    if (j < 0 || j >= items.length) return;
+    const next = [...items];
+    [next[i], next[j]] = [next[j], next[i]];
+    onChange(next);
+  }
+
+  return (
+    <div>
+      <label className="label">Carousel slides</label>
+      <div className="space-y-2">
+        {items.length === 0 && (
+          <p className="text-sm text-navy-400">No slides yet — add an image or video below.</p>
+        )}
+        {items.map((it, i) => (
+          <div key={i} className="flex items-center gap-3 rounded-lg border border-navy-100 p-2">
+            <div className="flex flex-col text-navy-400">
+              <button type="button" disabled={i === 0} onClick={() => move(i, "up")} className="hover:text-brand-500 disabled:opacity-30">▲</button>
+              <button type="button" disabled={i === items.length - 1} onClick={() => move(i, "down")} className="hover:text-brand-500 disabled:opacity-30">▼</button>
+            </div>
+            <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded bg-navy-900">
+              {it.type === "video" ? (
+                <div className="flex h-full w-full items-center justify-center text-xl text-white">▶</div>
+              ) : (
+                <Image src={it.src} alt="" fill className="object-cover" />
+              )}
+            </div>
+            <span className="shrink-0 rounded-full bg-navy-50 px-2 py-0.5 text-xs font-semibold text-navy-600">
+              {it.type === "video" ? "Video" : "Image"}
+            </span>
+            <input
+              className="input flex-1"
+              placeholder="Optional caption"
+              value={it.caption || ""}
+              onChange={(e) => updateCaption(i, e.target.value)}
+            />
+            <button type="button" className="shrink-0 text-sm font-semibold text-red-500" onClick={() => remove(i)}>
+              Remove
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <button type="button" className="btn-secondary" onClick={openPicker}>
+          + Add image
+        </button>
+        <input
+          className="input max-w-xs"
+          placeholder="Paste a YouTube link"
+          value={videoUrl}
+          onChange={(e) => setVideoUrl(e.target.value)}
+        />
+        <input
+          className="input max-w-[10rem]"
+          placeholder="Caption (optional)"
+          value={videoCaption}
+          onChange={(e) => setVideoCaption(e.target.value)}
+        />
+        <button type="button" className="btn-secondary" onClick={addVideo}>
+          + Add video
+        </button>
+      </div>
+
+      {picking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setPicking(false)}>
+          <div className="max-h-[80vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between">
+              <h4 className="font-bold text-navy-900">Choose an image</h4>
+              <button className="text-navy-400" onClick={() => setPicking(false)}>✕</button>
+            </div>
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
+              {images.map((img) => (
+                <button
+                  type="button"
+                  key={img._id}
+                  onClick={() => addImage(img.src)}
+                  className="relative aspect-square overflow-hidden rounded-lg ring-1 ring-navy-100 hover:ring-2 hover:ring-brand-400"
+                >
+                  <Image src={img.src} alt={img.alt || ""} fill className="object-cover" />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SectionEditor({ section, onChange }) {
   const [itemsText, setItemsText] = useState(JSON.stringify(section.items ?? [], null, 2));
   const t = section.type;
@@ -107,15 +233,16 @@ function SectionEditor({ section, onChange }) {
   }
 
   const showItems = ["stats", "services", "testimonials", "faq", "marquee"].includes(t);
-  const showImage = ["hero", "richtext"].includes(t);
-  const showBody = ["richtext", "cta"].includes(t);
-  const showTitle = t !== "marquee";
-  const showEyebrow = ["hero", "richtext", "services", "gallery", "video", "testimonials", "faq"].includes(t);
-  const showSubtitle = ["hero", "gallery"].includes(t);
+  const showImage = ["hero", "richtext", "imageBlock"].includes(t);
+  const showBody = ["richtext", "cta", "imageBlock"].includes(t);
+  const showTitle = t !== "marquee" && t !== "imageBlock";
+  const showEyebrow = ["hero", "richtext", "services", "gallery", "video", "testimonials", "faq", "carousel"].includes(t);
+  const showSubtitle = ["hero", "gallery", "carousel"].includes(t);
   const showCta = ["hero", "richtext", "gallery", "cta"].includes(t);
   const showCta2 = t === "hero";
   const showGalleryOpts = t === "gallery";
   const showVideoOpts = t === "video";
+  const showCarouselOpts = t === "carousel";
 
   return (
     <div className="space-y-4 border-t border-navy-100 pt-4">
@@ -237,6 +364,13 @@ function SectionEditor({ section, onChange }) {
             onBlur={applyItems}
           />
         </div>
+      )}
+
+      {showCarouselOpts && (
+        <CarouselItemsEditor
+          items={Array.isArray(section.items) ? section.items : []}
+          onChange={(items) => set("items", items)}
+        />
       )}
     </div>
   );
