@@ -38,5 +38,10 @@ const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "Ressa@2024";
 
 export function checkCredentials(username, password) {
-  return username === ADMIN_USERNAME && password === ADMIN_PASSWORD;
+  const u = typeof username === "string" ? username.trim() : username;
+  // Only trim the password of surrounding whitespace/newlines that browser
+  // autofill or accidental keyboard input can introduce — the password
+  // itself has no leading/trailing spaces, so this is safe.
+  const p = typeof password === "string" ? password.trim() : password;
+  return u === ADMIN_USERNAME && p === ADMIN_PASSWORD;
 }
