@@ -1,11 +1,56 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 
 const CATEGORIES = ["hero", "flyer", "project", "event", "logo", "about", "misc"];
 
+/* Work out, for every image, exactly which homepage sections currently show
+   it — either because it was picked directly (hero/richtext/imageBlock
+   image, or a carousel/project-card slide), or because a "gallery" section
+   auto-pulls it in by category and it falls within that section's limit.
+   This lets an admin see precisely where an image is placed before they
+   remove or replace it, instead of guessing. */
+function computeImageUsage(images, sections) {
+  const usage = {};
+  images.forEach((img) => {
+    usage[img._id] = [];
+  });
+
+  sections.forEach((s) => {
+    const label = s.title || `Untitled ${s.type} section`;
+
+    if (s.image) {
+      const match = images.find((i) => i.src === s.image);
+      if (match) usage[match._id].push({ label, detail: "main image" });
+    }
+
+    if (Array.isArray(s.items)) {
+      s.items.forEach((it) => {
+        if (it?.type !== "video" && it?.src) {
+          const match = images.find((i) => i.src === it.src);
+          if (match) usage[match._id].push({ label, detail: "slide" });
+        }
+      });
+    }
+
+    if (s.type === "gallery") {
+      const cat = s.galleryCategory;
+      const pool = !cat
+        ? images
+        : cat === "featured"
+        ? images.filter((i) => i.featured)
+        : images.filter((i) => i.category === cat);
+      const shown = pool.slice(0, s.galleryLimit || 8);
+      shown.forEach((img) => usage[img._id].push({ label, detail: "gallery photo" }));
+    }
+  });
+
+  return usage;
+}
+
 export default function ImagesManager() {
   const [images, setImages] = useState([]);
+  const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [editing, setEditing] = useState(null); // image object being edited
@@ -13,16 +58,30 @@ export default function ImagesManager() {
 
   async function load() {
     setLoading(true);
-    const res = await fetch("/api/admin/images");
-    setImages(await res.json());
+    const [imgRes, secRes] = await Promise.all([
+      fetch("/api/admin/images"),
+      fetch("/api/admin/sections?page=home"),
+    ]);
+    setImages(await imgRes.json());
+    setSections(await secRes.json());
     setLoading(false);
   }
   useEffect(() => {
     load();
   }, []);
 
+  const usage = useMemo(() => computeImageUsage(images, sections), [images, sections]);
+
   async function remove(id) {
-    if (!confirm("Delete this image permanently?")) return;
+    const places = usage[id] || [];
+    const uniquePlaces = [...new Set(places.map((p) => p.label))];
+    const warning =
+      uniquePlaces.length > 0
+        ? `This image is currently showing on the homepage in: ${uniquePlaces.join(
+            ", "
+          )}.\n\nDeleting it will leave that spot empty. Delete anyway?`
+        : "Delete this image permanently?";
+    if (!confirm(warning)) return;
     await fetch(`/api/admin/images/${id}`, { method: "DELETE" });
     setImages((x) => x.filter((i) => i._id !== id));
   }
@@ -58,7 +117,9 @@ export default function ImagesManager() {
         <p className="text-navy-400">Loading…</p>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {shown.map((img) => (
+          {shown.map((img) => {
+            const places = [...new Set((usage[img._id] || []).map((p) => p.label))];
+            return (
             <div
               key={img._id}
               className="group overflow-hidden rounded-xl bg-white ring-1 ring-navy-100"
@@ -76,6 +137,15 @@ export default function ImagesManager() {
                   {img.year ? ` · ${img.year}` : ""}
                 </span>
               </div>
+              <div className="px-2 pt-1.5">
+                {places.length > 0 ? (
+                  <p className="truncate text-[11px] font-medium text-green-700" title={`Used on the homepage in: ${places.join(", ")}`}>
+                    ✓ Used in: {places.join(", ")}
+                  </p>
+                ) : (
+                  <p className="truncate text-[11px] text-navy-400">Not on homepage</p>
+                )}
+              </div>
               <div className="flex gap-1 p-2">
                 <button
                   onClick={() => setEditing(img)}
@@ -91,7 +161,8 @@ export default function ImagesManager() {
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
       <p className="mt-4 text-sm text-navy-500">

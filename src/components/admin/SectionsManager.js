@@ -335,6 +335,153 @@ function MediaItemsEditor({ items, onChange, withTitle = false, label = "Slides"
   );
 }
 
+/* -------- What a gallery / video section actually shows live -------- */
+function galleryPool(images, section) {
+  const cat = section.galleryCategory;
+  const pool = !cat
+    ? images
+    : cat === "featured"
+    ? images.filter((i) => i.featured)
+    : images.filter((i) => i.category === cat);
+  return pool.slice(0, section.galleryLimit || 8);
+}
+
+function videoPool(videos, section) {
+  return videos.slice(0, section.videoLimit || 2);
+}
+
+/* A small stacked-thumbnail preview shown in the collapsed section row, so
+   an admin can see at a glance exactly which photo/video is placed where
+   on the homepage without opening "Edit". */
+function SectionThumb({ section, images, videos }) {
+  const t = section.type;
+  const box = "relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-navy-800 ring-2 ring-white";
+
+  if (["hero", "richtext", "imageBlock"].includes(t)) {
+    if (section.image) {
+      return (
+        <div className={box}>
+          <Image src={section.image} alt="" fill className="object-cover" sizes="44px" />
+        </div>
+      );
+    }
+    return (
+      <div className={`${box} flex items-center justify-center text-[9px] font-medium text-white/70`}>
+        auto
+      </div>
+    );
+  }
+
+  if (["carousel", "projectCards"].includes(t)) {
+    const items = Array.isArray(section.items) ? section.items : [];
+    if (!items.length) {
+      return (
+        <div className={`${box} flex items-center justify-center text-[9px] font-medium text-white/70`}>
+          empty
+        </div>
+      );
+    }
+    return (
+      <div className="flex -space-x-3">
+        {items.slice(0, 3).map((it, idx) => (
+          <div key={idx} className={box} style={{ zIndex: 3 - idx }}>
+            {it.type === "video" ? (
+              <div className="flex h-full w-full items-center justify-center text-sm text-white">▶</div>
+            ) : (
+              <Image src={it.src} alt="" fill className="object-cover" sizes="44px" />
+            )}
+          </div>
+        ))}
+        {items.length > 3 && (
+          <div className={`${box} flex items-center justify-center text-[9px] font-bold text-white`}>
+            +{items.length - 3}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (t === "gallery") {
+    const shown = galleryPool(images, section);
+    if (!shown.length) {
+      return (
+        <div className={`${box} flex items-center justify-center text-[9px] font-medium text-white/70`}>
+          none
+        </div>
+      );
+    }
+    return (
+      <div className="flex -space-x-3">
+        {shown.slice(0, 3).map((img, idx) => (
+          <div key={img._id} className={box} style={{ zIndex: 3 - idx }}>
+            <Image src={img.src} alt="" fill className="object-cover" sizes="44px" />
+          </div>
+        ))}
+        {shown.length > 3 && (
+          <div className={`${box} flex items-center justify-center text-[9px] font-bold text-white`}>
+            +{shown.length - 3}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (t === "video") {
+    const shown = videoPool(videos, section);
+    return (
+      <div className={`${box} flex items-center justify-center text-base text-white`}>
+        ▶
+        {shown.length > 0 && (
+          <span className="absolute bottom-0 right-0 rounded-tl bg-black/70 px-1 text-[9px] font-bold text-white">
+            {shown.length}
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${box} flex items-center justify-center text-[9px] font-medium text-white/70`}>
+      —
+    </div>
+  );
+}
+
+/* One-line plain-English summary of what's currently live in this section,
+   shown under the title so an admin doesn't have to open it to know. */
+function sectionSummary(section, images, videos) {
+  const t = section.type;
+  if (["hero", "richtext", "imageBlock"].includes(t)) {
+    return section.image
+      ? "Custom image set"
+      : "No image chosen — falls back to a default photo";
+  }
+  if (["carousel", "projectCards"].includes(t)) {
+    const items = Array.isArray(section.items) ? section.items : [];
+    const imgCount = items.filter((i) => i.type !== "video").length;
+    const vidCount = items.filter((i) => i.type === "video").length;
+    if (!items.length) return "No slides added yet";
+    const parts = [];
+    if (imgCount) parts.push(`${imgCount} photo${imgCount === 1 ? "" : "s"}`);
+    if (vidCount) parts.push(`${vidCount} video${vidCount === 1 ? "" : "s"}`);
+    return parts.join(" + ");
+  }
+  if (t === "gallery") {
+    const shown = galleryPool(images, section);
+    const cat = section.galleryCategory || "any category";
+    return shown.length
+      ? `Shows ${shown.length} photo${shown.length === 1 ? "" : "s"} (${cat})`
+      : `No photos match "${cat}" yet`;
+  }
+  if (t === "video") {
+    const shown = videoPool(videos, section);
+    return shown.length
+      ? `Shows ${shown.length} video${shown.length === 1 ? "" : "s"} (in order from the Videos tab)`
+      : "No videos in your library yet";
+  }
+  return null;
+}
+
 function SectionEditor({ section, onChange }) {
   const [itemsText, setItemsText] = useState(JSON.stringify(section.items ?? [], null, 2));
   const t = section.type;
@@ -509,14 +656,22 @@ function SectionEditor({ section, onChange }) {
 
 export default function SectionsManager() {
   const [sections, setSections] = useState(null);
+  const [images, setImages] = useState([]);
+  const [videos, setVideos] = useState([]);
   const [openId, setOpenId] = useState(null);
   const [newType, setNewType] = useState("richtext");
   const [busyId, setBusyId] = useState(null);
   const [msg, setMsg] = useState("");
 
   async function load() {
-    const res = await fetch("/api/admin/sections?page=home");
-    setSections(await res.json());
+    const [secRes, imgRes, vidRes] = await Promise.all([
+      fetch("/api/admin/sections?page=home"),
+      fetch("/api/admin/images"),
+      fetch("/api/admin/videos"),
+    ]);
+    setSections(await secRes.json());
+    setImages(await imgRes.json());
+    setVideos(await vidRes.json());
   }
 
   useEffect(() => {
@@ -626,11 +781,19 @@ export default function SectionsManager() {
                 <button type="button" disabled={i === 0} onClick={() => move(section, "up")} className="text-navy-400 hover:text-brand-500 disabled:opacity-30">▲</button>
                 <button type="button" disabled={i === sorted.length - 1} onClick={() => move(section, "down")} className="text-navy-400 hover:text-brand-500 disabled:opacity-30">▼</button>
               </div>
+              <SectionThumb section={section} images={images} videos={videos} />
               <span className="rounded-full bg-navy-50 px-2.5 py-1 text-xs font-semibold text-navy-600">
                 {TYPE_LABELS[section.type] || section.type}
               </span>
-              <span className="flex-1 truncate font-medium text-navy-900">
-                {section.title || <em className="text-navy-400">Untitled</em>}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-medium text-navy-900">
+                  {section.title || <em className="text-navy-400">Untitled</em>}
+                </span>
+                {sectionSummary(section, images, videos) && (
+                  <span className="block truncate text-xs text-navy-400">
+                    {sectionSummary(section, images, videos)}
+                  </span>
+                )}
               </span>
               <label className="flex items-center gap-1.5 text-xs text-navy-500">
                 <input type="checkbox" checked={section.visible !== false} onChange={() => toggleVisible(section)} />
