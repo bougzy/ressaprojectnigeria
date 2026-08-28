@@ -15,6 +15,7 @@ const TYPE_LABELS = {
   cta: "📣 Call-to-action banner",
   carousel: "🎠 Photo & video carousel",
   imageBlock: "🖼️ Simple image block",
+  projectCards: "🗂️ Our Projects (sliding cards)",
 };
 
 const BG_OPTIONS = [
@@ -32,6 +33,7 @@ function defaultItemsFor(type) {
   if (type === "faq") return [{ q: "Question?", a: "Answer." }];
   if (type === "marquee") return ["New highlight"];
   if (type === "carousel") return [];
+  if (type === "projectCards") return [];
   return [];
 }
 
@@ -92,10 +94,11 @@ function ImagePicker({ value, onChange }) {
   );
 }
 
-function CarouselItemsEditor({ items, onChange }) {
+function MediaItemsEditor({ items, onChange, withTitle = false, label = "Slides" }) {
   const [picking, setPicking] = useState(false);
   const [images, setImages] = useState([]);
   const [videoUrl, setVideoUrl] = useState("");
+  const [videoTitle, setVideoTitle] = useState("");
   const [videoCaption, setVideoCaption] = useState("");
 
   async function openPicker() {
@@ -105,19 +108,23 @@ function CarouselItemsEditor({ items, onChange }) {
   }
 
   function addImage(src) {
-    onChange([...items, { type: "image", src, caption: "" }]);
+    onChange([...items, { type: "image", src, title: "", caption: "" }]);
     setPicking(false);
   }
 
   function addVideo() {
     if (!videoUrl.trim()) return;
-    onChange([...items, { type: "video", src: videoUrl.trim(), caption: videoCaption.trim() }]);
+    onChange([
+      ...items,
+      { type: "video", src: videoUrl.trim(), title: videoTitle.trim(), caption: videoCaption.trim() },
+    ]);
     setVideoUrl("");
+    setVideoTitle("");
     setVideoCaption("");
   }
 
-  function updateCaption(i, caption) {
-    onChange(items.map((it, idx) => (idx === i ? { ...it, caption } : it)));
+  function updateField(i, field, value) {
+    onChange(items.map((it, idx) => (idx === i ? { ...it, [field]: value } : it)));
   }
 
   function remove(i) {
@@ -134,13 +141,13 @@ function CarouselItemsEditor({ items, onChange }) {
 
   return (
     <div>
-      <label className="label">Carousel slides</label>
+      <label className="label">{label}</label>
       <div className="space-y-2">
         {items.length === 0 && (
-          <p className="text-sm text-navy-400">No slides yet — add an image or video below.</p>
+          <p className="text-sm text-navy-400">Nothing added yet — add an image or video below.</p>
         )}
         {items.map((it, i) => (
-          <div key={i} className="flex items-center gap-3 rounded-lg border border-navy-100 p-2">
+          <div key={i} className="flex flex-wrap items-center gap-3 rounded-lg border border-navy-100 p-2">
             <div className="flex flex-col text-navy-400">
               <button type="button" disabled={i === 0} onClick={() => move(i, "up")} className="hover:text-brand-500 disabled:opacity-30">▲</button>
               <button type="button" disabled={i === items.length - 1} onClick={() => move(i, "down")} className="hover:text-brand-500 disabled:opacity-30">▼</button>
@@ -155,12 +162,22 @@ function CarouselItemsEditor({ items, onChange }) {
             <span className="shrink-0 rounded-full bg-navy-50 px-2 py-0.5 text-xs font-semibold text-navy-600">
               {it.type === "video" ? "Video" : "Image"}
             </span>
-            <input
-              className="input flex-1"
-              placeholder="Optional caption"
-              value={it.caption || ""}
-              onChange={(e) => updateCaption(i, e.target.value)}
-            />
+            <div className="flex flex-1 flex-col gap-1.5 sm:flex-row">
+              {withTitle && (
+                <input
+                  className="input sm:w-40"
+                  placeholder="Title"
+                  value={it.title || ""}
+                  onChange={(e) => updateField(i, "title", e.target.value)}
+                />
+              )}
+              <input
+                className="input flex-1"
+                placeholder="Optional caption / short text"
+                value={it.caption || ""}
+                onChange={(e) => updateField(i, "caption", e.target.value)}
+              />
+            </div>
             <button type="button" className="shrink-0 text-sm font-semibold text-red-500" onClick={() => remove(i)}>
               Remove
             </button>
@@ -178,6 +195,14 @@ function CarouselItemsEditor({ items, onChange }) {
           value={videoUrl}
           onChange={(e) => setVideoUrl(e.target.value)}
         />
+        {withTitle && (
+          <input
+            className="input max-w-[10rem]"
+            placeholder="Title (optional)"
+            value={videoTitle}
+            onChange={(e) => setVideoTitle(e.target.value)}
+          />
+        )}
         <input
           className="input max-w-[10rem]"
           placeholder="Caption (optional)"
@@ -236,13 +261,14 @@ function SectionEditor({ section, onChange }) {
   const showImage = ["hero", "richtext", "imageBlock"].includes(t);
   const showBody = ["richtext", "cta", "imageBlock"].includes(t);
   const showTitle = t !== "marquee" && t !== "imageBlock";
-  const showEyebrow = ["hero", "richtext", "services", "gallery", "video", "testimonials", "faq", "carousel"].includes(t);
-  const showSubtitle = ["hero", "gallery", "carousel"].includes(t);
+  const showEyebrow = ["hero", "richtext", "services", "gallery", "video", "testimonials", "faq", "carousel", "projectCards"].includes(t);
+  const showSubtitle = ["hero", "gallery", "carousel", "projectCards"].includes(t);
   const showCta = ["hero", "richtext", "gallery", "cta"].includes(t);
   const showCta2 = t === "hero";
   const showGalleryOpts = t === "gallery";
   const showVideoOpts = t === "video";
   const showCarouselOpts = t === "carousel";
+  const showProjectCardsOpts = t === "projectCards";
 
   return (
     <div className="space-y-4 border-t border-navy-100 pt-4">
@@ -367,7 +393,17 @@ function SectionEditor({ section, onChange }) {
       )}
 
       {showCarouselOpts && (
-        <CarouselItemsEditor
+        <MediaItemsEditor
+          label="Carousel slides"
+          items={Array.isArray(section.items) ? section.items : []}
+          onChange={(items) => set("items", items)}
+        />
+      )}
+
+      {showProjectCardsOpts && (
+        <MediaItemsEditor
+          label="Project cards"
+          withTitle
           items={Array.isArray(section.items) ? section.items : []}
           onChange={(items) => set("items", items)}
         />

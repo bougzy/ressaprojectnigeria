@@ -352,6 +352,54 @@ export const DEFAULT_SECTIONS = [
     body: "",
     items: [],
   },
+  {
+    key: "our-projects",
+    type: "projectCards",
+    order: 13,
+    visible: true,
+    bg: "light",
+    eyebrow: "Portfolio",
+    title: "Our Projects",
+    subtitle: "Browse our estate phases — tap any card to view it in full.",
+    items: [
+      {
+        type: "image",
+        src: "/images/phase-1.jpg",
+        title: "Phase 1",
+        caption: "NGN 1.5M per plot — secure environment, good road network, perimeter fencing, electricity, instant allocation.",
+      },
+      {
+        type: "image",
+        src: "/images/phase-2-annex-a.jpg",
+        title: "Phase 2 — Annex A",
+        caption: "NGN 1.5M per plot — layout & master plan, well-planned roads, green areas, modern infrastructure.",
+      },
+      {
+        type: "image",
+        src: "/images/phase-2-annex-b.jpg",
+        title: "Phase 2 — Annex B",
+        caption: "NGN 1.5M per plot — secure environment, good road network, instant allocation.",
+      },
+      {
+        type: "image",
+        src: "/images/phase-3.jpg",
+        title: "Phase 3",
+        caption: "NGN 1.5M per plot — 24/7 security, well paved roads, steady electricity, estate management.",
+      },
+      {
+        type: "image",
+        src: "/images/phase-3-extension.jpg",
+        title: "Phase 3 Extension",
+        caption: "NGN 1.5M per plot — secure environment, flexible payment plan, instant allocation.",
+      },
+      {
+        type: "image",
+        src: "/images/phase-4.jpg",
+        title: "Phase 4",
+        caption: "NGN 1.0M per plot — 24/7 security, well paved roads, flexible payment plan available.",
+      },
+    ],
+  },
 ];
 
 /**
@@ -385,6 +433,8 @@ export function categorise(filename) {
   // Numbered "latest projects"
   if (/^\d+-scaled\.jpg$/.test(f) || /^\d+\.jpg$/.test(f))
     return { category: "project", year: "2024" };
+  // Phase flyers (Our Projects card section)
+  if (f.startsWith("phase-")) return { category: "project", year: "2025" };
   // Decorative / stock
   if (f.startsWith("130-2") || f.startsWith("top-view"))
     return { category: "misc", year: "" };

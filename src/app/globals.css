@@ -216,6 +216,22 @@ body {
   animation: marquee 22s linear infinite;
 }
 
+/* Slower marquee for image/video project cards — pauses on hover so the
+   admin's photos/videos are easy to read and click. */
+@keyframes marqueeCards {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.marquee-cards-track {
+  display: inline-flex;
+  gap: 1.25rem;
+  animation: marqueeCards 60s linear infinite;
+}
+.marquee-cards-track:hover,
+.marquee-cards-track.is-paused {
+  animation-play-state: paused;
+}
+
 /* Shimmer underline for eyebrows */
 @keyframes wiggle {
   0%, 100% { transform: rotate(0deg); }
@@ -230,6 +246,7 @@ body {
   .animated-gradient,
   .blob,
   .marquee-track,
+  .marquee-cards-track,
   .confetti-piece,
   .pulse-ring::before {
     animation: none !important;

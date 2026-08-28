@@ -7,6 +7,7 @@ import Confetti from "@/components/anim/Confetti";
 import CountUp from "@/components/anim/CountUp";
 import LogoImage from "@/components/LogoImage";
 import EventsCarousel from "./EventsCarousel";
+import ProjectsMarquee from "./ProjectsMarquee";
 
 const BG = {
   white: "bg-white",
@@ -49,6 +50,8 @@ export default async function SectionRenderer({ section, videos = [], fallbackIm
       return <EventsCarouselSection section={section} dark={dark} />;
     case "imageBlock":
       return <ImageBlock section={section} fallbackImage={fallbackImage} />;
+    case "projectCards":
+      return <ProjectCardsSection section={section} dark={dark} />;
     default:
       return null;
   }
@@ -397,6 +400,30 @@ function ImageBlock({ section, fallbackImage }) {
         {section.body && (
           <p className="mt-6 max-w-2xl text-navy-600">{section.body}</p>
         )}
+      </div>
+    </Wrap>
+  );
+}
+
+/* ------------------------------- OUR PROJECTS ------------------------------- */
+function ProjectCardsSection({ section, dark }) {
+  const items = Array.isArray(section.items) ? section.items : [];
+  if (!items.length) return null;
+  return (
+    <Wrap bg={section.bg} className="section overflow-hidden">
+      <div className="container">
+        {(section.eyebrow || section.title || section.subtitle) && (
+          <div className="mx-auto mb-10 max-w-2xl text-center">
+            {section.eyebrow && <span className="eyebrow">{section.eyebrow}</span>}
+            {section.title && <h2 className="h-section mt-2">{section.title}</h2>}
+            {section.subtitle && (
+              <p className={`mt-3 ${dark ? "text-navy-100" : "text-navy-600"}`}>{section.subtitle}</p>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="pb-2">
+        <ProjectsMarquee items={items} />
       </div>
     </Wrap>
   );
