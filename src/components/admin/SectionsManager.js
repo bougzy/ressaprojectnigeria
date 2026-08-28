@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { compressImageFile, uploadFilesInBatches } from "@/lib/clientMedia";
 
 const TYPE_LABELS = {
   hero: "🦸 Hero (top banner)",
@@ -40,11 +41,27 @@ function defaultItemsFor(type) {
 function ImagePicker({ value, onChange }) {
   const [open, setOpen] = useState(false);
   const [images, setImages] = useState([]);
+  const [uploading, setUploading] = useState(false);
 
   async function load() {
     const res = await fetch("/api/admin/images");
     setImages(await res.json());
     setOpen(true);
+  }
+
+  async function uploadNew(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const compressed = await compressImageFile(file);
+    const { results, errors } = await uploadFilesInBatches([compressed], { category: "misc" }, "image");
+    setUploading(false);
+    e.target.value = "";
+    if (results[0]) {
+      onChange(results[0].src);
+      setOpen(false);
+    }
+    if (errors.length) alert(errors.join("\n\n"));
   }
 
   return (
@@ -71,6 +88,13 @@ function ImagePicker({ value, onChange }) {
             <div className="mb-3 flex items-center justify-between">
               <h4 className="font-bold text-navy-900">Choose an image</h4>
               <button className="text-navy-400" onClick={() => setOpen(false)}>✕</button>
+            </div>
+            <div className="mb-3 flex items-center gap-2 rounded-lg bg-navy-50 p-2.5">
+              <label className="text-sm font-medium text-navy-700 shrink-0">
+                Or upload from your device:
+              </label>
+              <input type="file" accept="image/*" onChange={uploadNew} disabled={uploading} className="text-sm" />
+              {uploading && <span className="text-sm text-navy-500">Uploading…</span>}
             </div>
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
               {images.map((img) => (
@@ -100,6 +124,9 @@ function MediaItemsEditor({ items, onChange, withTitle = false, label = "Slides"
   const [videoUrl, setVideoUrl] = useState("");
   const [videoTitle, setVideoTitle] = useState("");
   const [videoCaption, setVideoCaption] = useState("");
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadingVideos, setUploadingVideos] = useState(false);
+  const [uploadMsg, setUploadMsg] = useState("");
 
   async function openPicker() {
     const res = await fetch("/api/admin/images");
@@ -110,6 +137,54 @@ function MediaItemsEditor({ items, onChange, withTitle = false, label = "Slides"
   function addImage(src) {
     onChange([...items, { type: "image", src, title: "", caption: "" }]);
     setPicking(false);
+  }
+
+  // Upload several local image files at once and add each as a new slide —
+  // no need to add them to the library first.
+  async function uploadImages(e) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploadingImages(true);
+    const compressed = [];
+    for (let i = 0; i < files.length; i++) {
+      setUploadMsg(`Compressing image ${i + 1} of ${files.length}…`);
+      compressed.push(await compressImageFile(files[i]));
+    }
+    setUploadMsg(`Uploading ${compressed.length} image${compressed.length === 1 ? "" : "s"}…`);
+    const { results, errors } = await uploadFilesInBatches(compressed, { category: "misc" }, "image");
+    setUploadingImages(false);
+    setUploadMsg("");
+    e.target.value = "";
+    if (results.length) {
+      onChange([...items, ...results.map((r) => ({ type: "image", src: r.src, title: "", caption: "" }))]);
+    }
+    if (errors.length) alert(errors.join("\n\n"));
+  }
+
+  // Upload several short local video clips at once and add each as a new
+  // slide. Longer videos should use the "paste a YouTube link" option
+  // instead, since uploaded clips are capped to keep pages loading fast.
+  async function uploadVideos(e) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploadingVideos(true);
+    setUploadMsg(`Uploading ${files.length} video${files.length === 1 ? "" : "s"}…`);
+    const { results, errors } = await uploadFilesInBatches(
+      files,
+      {},
+      "video",
+      3.5 * 1024 * 1024
+    );
+    setUploadingVideos(false);
+    setUploadMsg("");
+    e.target.value = "";
+    if (results.length) {
+      onChange([
+        ...items,
+        ...results.map((r) => ({ type: "video", src: r.url, title: r.title || "", caption: "" })),
+      ]);
+    }
+    if (errors.length) alert(errors.join("\n\n"));
   }
 
   function addVideo() {
@@ -189,6 +264,19 @@ function MediaItemsEditor({ items, onChange, withTitle = false, label = "Slides"
         <button type="button" className="btn-secondary" onClick={openPicker}>
           + Add image
         </button>
+        <label className="btn-secondary cursor-pointer">
+          {uploadingImages ? "Uploading…" : "+ Upload image(s) from device"}
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={uploadImages}
+            disabled={uploadingImages}
+            className="hidden"
+          />
+        </label>
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-3">
         <input
           className="input max-w-xs"
           placeholder="Paste a YouTube link"
@@ -212,7 +300,22 @@ function MediaItemsEditor({ items, onChange, withTitle = false, label = "Slides"
         <button type="button" className="btn-secondary" onClick={addVideo}>
           + Add video
         </button>
+        <label className="btn-secondary cursor-pointer">
+          {uploadingVideos ? "Uploading…" : "+ Upload video file(s) from device"}
+          <input
+            type="file"
+            accept="video/*"
+            multiple
+            onChange={uploadVideos}
+            disabled={uploadingVideos}
+            className="hidden"
+          />
+        </label>
       </div>
+      {uploadMsg && <p className="mt-1 text-xs text-navy-500">{uploadMsg}</p>}
+      <p className="mt-1 text-xs text-navy-400">
+        Uploaded video clips work best under ~3.5MB each. For longer videos, paste a YouTube link instead.
+      </p>
 
       {picking && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setPicking(false)}>

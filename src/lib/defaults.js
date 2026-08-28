@@ -400,12 +400,47 @@ export const DEFAULT_SECTIONS = [
       },
     ],
   },
+  {
+    key: "our-office",
+    type: "carousel",
+    order: 14,
+    visible: true,
+    bg: "white",
+    eyebrow: "Visit Us",
+    title: "Our Office",
+    subtitle: "Take a look inside the Ressa Project Nigeria office.",
+    items: [
+      { type: "image", src: "/images/office/office-exterior-1.jpg", caption: "Our head office building" },
+      { type: "image", src: "/images/office/office-exterior-2.jpg", caption: "Office building — front view" },
+      { type: "image", src: "/images/office/office-entrance.jpg", caption: "Office entrance" },
+      { type: "image", src: "/images/office/office-lobby.jpg", caption: "Reception lobby" },
+      { type: "image", src: "/images/office/office-reception-desk.jpg", caption: "Front desk" },
+      { type: "image", src: "/images/office/office-interior-landing.jpg", caption: "Upper floor landing & seating area" },
+      { type: "image", src: "/images/office/office-lounge-1.jpg", caption: "Waiting lounge" },
+      { type: "image", src: "/images/office/office-boardroom.jpg", caption: "Boardroom & meeting area" },
+      { type: "image", src: "/images/office/office-gate-banner.jpg", caption: "Ressa Real Estate Project Development — Teachers Must Become Landlords" },
+      { type: "image", src: "/images/office/office-flyer-summit.jpg", caption: "2026 RESSA Annual Summit — Teachers Must Become Landowners" },
+    ],
+  },
 ];
 
 /**
  * Heuristic categorisation of the downloaded image filenames so every image is
  * placed somewhere sensible on first seed. The admin can re-categorise later.
  */
+export const DEFAULT_EXTRA_IMAGES = [
+  { src: "/images/office/office-exterior-1.jpg", alt: "Ressa office building exterior", category: "about" },
+  { src: "/images/office/office-exterior-2.jpg", alt: "Ressa office building, front view", category: "about" },
+  { src: "/images/office/office-entrance.jpg", alt: "Office entrance", category: "about" },
+  { src: "/images/office/office-lobby.jpg", alt: "Reception lobby", category: "about" },
+  { src: "/images/office/office-reception-desk.jpg", alt: "Front desk", category: "about" },
+  { src: "/images/office/office-interior-landing.jpg", alt: "Upper floor landing & seating area", category: "about" },
+  { src: "/images/office/office-lounge-1.jpg", alt: "Waiting lounge", category: "about" },
+  { src: "/images/office/office-boardroom.jpg", alt: "Boardroom & meeting area", category: "about" },
+  { src: "/images/office/office-gate-banner.jpg", alt: "Teachers Must Become Landlords banner", category: "flyer" },
+  { src: "/images/office/office-flyer-summit.jpg", alt: "2026 RESSA Annual Summit flyer", category: "flyer" },
+];
+
 export function categorise(filename) {
   const f = filename.toLowerCase();
   if (f.includes("logo")) return { category: "logo", year: "" };

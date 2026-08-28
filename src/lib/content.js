@@ -1,6 +1,6 @@
 import { dbConnect } from "./mongodb";
 import { GalleryImage, Video, Setting, Section } from "./models";
-import { DEFAULT_SETTINGS, DEFAULT_SECTIONS } from "./defaults";
+import { DEFAULT_SETTINGS, DEFAULT_SECTIONS, DEFAULT_EXTRA_IMAGES } from "./defaults";
 
 /**
  * Returns the merged settings object (DB values override defaults). Falls back
@@ -23,6 +23,7 @@ export async function getSettings() {
 export async function getImages(filter = {}) {
   try {
     await dbConnect();
+    await ensureExtraImagesSeeded();
     const q = {};
     if (filter.category) q.category = filter.category;
     if (filter.year) q.year = filter.year;
@@ -45,6 +46,36 @@ export async function getVideos() {
     console.error("getVideos error:", e.message);
     return [];
   }
+}
+
+/**
+ * Ensures every image listed in DEFAULT_EXTRA_IMAGES exists in the Images
+ * library — inserting only the ones that are missing (matched by src), so
+ * new curated images can be added to the codebase later and will appear
+ * automatically without ever duplicating or resetting the admin's own
+ * uploads. Safe to call on every request.
+ */
+export async function ensureExtraImagesSeeded() {
+  if (!DEFAULT_EXTRA_IMAGES?.length) return;
+  await dbConnect();
+  const srcs = DEFAULT_EXTRA_IMAGES.map((i) => i.src);
+  const existing = await GalleryImage.find({ src: { $in: srcs } }, { src: 1 }).lean();
+  const existingSrc = new Set(existing.map((i) => i.src));
+  const missing = DEFAULT_EXTRA_IMAGES.filter((i) => !existingSrc.has(i.src));
+  if (!missing.length) return;
+  const top = await GalleryImage.find({}).sort({ order: -1 }).limit(1).lean();
+  const start = (top[0]?.order || 0) + 1;
+  await GalleryImage.insertMany(
+    missing.map((i, idx) => ({
+      src: i.src,
+      alt: i.alt || "",
+      caption: i.caption || "",
+      category: i.category || "misc",
+      year: i.year || "",
+      order: start + idx,
+      featured: !!i.featured,
+    }))
+  );
 }
 
 /**

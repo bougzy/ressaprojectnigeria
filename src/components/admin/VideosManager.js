@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { uploadFilesInBatches } from "@/lib/clientMedia";
 
 const empty = { title: "", url: "", description: "" };
 
@@ -58,6 +59,31 @@ export default function VideosManager() {
   }, []);
 
   const usage = useMemo(() => computeVideoUsage(videos, sections), [videos, sections]);
+
+  const [uploadFiles, setUploadFiles] = useState([]);
+  const [uploadBusy, setUploadBusy] = useState(false);
+  const [uploadMsg, setUploadMsg] = useState("");
+  const fileRef = useRef();
+
+  async function uploadLocalVideos() {
+    if (!uploadFiles.length) return alert("Choose one or more video files first");
+    setUploadBusy(true);
+    setUploadMsg(`Uploading ${uploadFiles.length} video${uploadFiles.length === 1 ? "" : "s"}…`);
+    const { results, errors } = await uploadFilesInBatches(
+      uploadFiles,
+      { description: form.description },
+      "video",
+      3.5 * 1024 * 1024
+    );
+    setUploadBusy(false);
+    setUploadMsg("");
+    if (results.length) {
+      setUploadFiles([]);
+      if (fileRef.current) fileRef.current.value = "";
+      load();
+    }
+    if (errors.length) alert(errors.join("\n\n"));
+  }
 
   async function submit(e) {
     e.preventDefault();
@@ -145,6 +171,39 @@ export default function VideosManager() {
             </button>
           )}
         </div>
+
+        {!editId && (
+          <div className="mt-2 border-t border-navy-100 pt-4">
+            <p className="label">Or upload video file(s) from your device</p>
+            <input
+              type="file"
+              accept="video/*"
+              multiple
+              ref={fileRef}
+              onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
+              className="text-sm"
+            />
+            <p className="mt-1 text-xs text-navy-400">
+              Best for short clips (max 4MB each). For longer videos, paste a
+              YouTube link above instead — it has no size limit.
+            </p>
+            {uploadFiles.length > 0 && (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={uploadLocalVideos}
+                  disabled={uploadBusy}
+                  className="btn-primary text-sm"
+                >
+                  {uploadBusy
+                    ? "Uploading…"
+                    : `Upload ${uploadFiles.length} video${uploadFiles.length === 1 ? "" : "s"}`}
+                </button>
+                {uploadMsg && <span className="text-sm text-navy-500">{uploadMsg}</span>}
+              </div>
+            )}
+          </div>
+        )}
       </form>
 
       {/* List */}
