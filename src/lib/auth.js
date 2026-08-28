@@ -1,7 +1,11 @@
 import { SignJWT, jwtVerify } from "jose";
 
+// Hardcoded so admin sessions work identically everywhere (local, Vercel,
+// any host) without requiring any environment variable setup. If you ever
+// want to invalidate all existing admin sessions at once, change this
+// string and redeploy.
 const secret = new TextEncoder().encode(
-  process.env.AUTH_SECRET || "dev-only-insecure-secret-change-me"
+  "ressa-project-nigeria-admin-session-secret-2024-do-not-share"
 );
 
 export const COOKIE_NAME = "ressa_admin";
@@ -24,8 +28,15 @@ export async function verifySession(token) {
   }
 }
 
+// Hardcoded admin login — intentionally not read from environment variables,
+// so the dashboard works the same everywhere (locally and on Vercel) without
+// any env var setup, and can't accidentally be overridden by a stray/typo'd
+// ADMIN_USERNAME or ADMIN_PASSWORD value on the hosting platform.
+//
+// To change the password, edit these two constants directly and redeploy.
+const ADMIN_USERNAME = "admin";
+const ADMIN_PASSWORD = "Ressa@2024";
+
 export function checkCredentials(username, password) {
-  const u = process.env.ADMIN_USERNAME || "admin";
-  const p = process.env.ADMIN_PASSWORD || "Ressa@2024";
-  return username === u && password === p;
+  return username === ADMIN_USERNAME && password === ADMIN_PASSWORD;
 }

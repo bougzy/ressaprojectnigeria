@@ -50,9 +50,12 @@ Username: admin
 Password: Ressa@2024
 ```
 
-Change these in **`.env.local`** (`ADMIN_USERNAME` / `ADMIN_PASSWORD`) before
-deploying. Sessions are signed JWTs stored in an httpOnly cookie; admin pages
-and write APIs are protected by middleware.
+Change these in **`src/lib/auth.js`** (the `ADMIN_USERNAME` / `ADMIN_PASSWORD`
+constants near the top of the file) and redeploy — they're hardcoded on
+purpose, not read from environment variables, so the login works identically
+everywhere without any env var setup on Vercel or elsewhere. Sessions are
+signed JWTs stored in an httpOnly cookie; admin pages and write APIs are
+protected by middleware.
 
 ---
 
@@ -63,13 +66,11 @@ and write APIs are protected by middleware.
 - **MongoDB** — either local or a free MongoDB Atlas cluster.
 
 ### 2. Configure environment
-Edit **`.env.local`** (already created):
+Edit **`.env.local`** (already created) — only the database and WhatsApp
+number need to be set here; admin login is hardcoded in `src/lib/auth.js`:
 
 ```env
 MONGODB_URI="mongodb://127.0.0.1:27017/ressa"   # or your Atlas SRV string
-ADMIN_USERNAME="admin"
-ADMIN_PASSWORD="Ressa@2024"
-AUTH_SECRET="change-me-to-a-long-random-string"
 NEXT_PUBLIC_WHATSAPP="2347043331195"
 ```
 
