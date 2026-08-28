@@ -246,9 +246,10 @@ function EditModal({ img, onClose, onSaved }) {
   );
 }
 
-/* ---------------- Upload / Add new image ---------------- */
+/* ---------------- Upload / Add new image(s) ---------------- */
 function UploadModal({ onClose, onAdded }) {
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState("");
   const [meta, setMeta] = useState({
     category: "event",
     year: "",
@@ -259,28 +260,33 @@ function UploadModal({ onClose, onAdded }) {
   const fileRef = useRef();
 
   async function upload() {
-    const file = fileRef.current?.files?.[0];
-    if (!file) return alert("Choose a file");
+    const files = Array.from(fileRef.current?.files || []);
+    if (!files.length) return alert("Choose at least one file");
     setBusy(true);
-    const fd = new FormData();
-    fd.append("file", file);
-    Object.entries(meta).forEach(([k, v]) => fd.append(k, String(v)));
-    const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      setProgress(files.length > 1 ? `Uploading ${i + 1} of ${files.length}…` : "Uploading…");
+      const fd = new FormData();
+      fd.append("file", file);
+      Object.entries(meta).forEach(([k, v]) => fd.append(k, String(v)));
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      if (res.ok) onAdded(await res.json());
+      else alert(`Failed to upload "${file.name}"`);
+    }
     setBusy(false);
-    if (res.ok) onAdded(await res.json());
-    else alert("Upload failed");
+    setProgress("");
   }
 
   return (
-    <Modal title="Add a new image" onClose={onClose}>
+    <Modal title="Add new image(s)" onClose={onClose}>
       <div className="space-y-3">
         <div>
-          <label className="label">Image file</label>
-          <input type="file" accept="image/*" ref={fileRef} className="text-sm" />
+          <label className="label">Image file(s) — select several at once if you like</label>
+          <input type="file" accept="image/*" multiple ref={fileRef} className="text-sm" />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="label">Category</label>
+            <label className="label">Category (applied to all selected)</label>
             <select
               className="input"
               value={meta.category}
@@ -318,12 +324,13 @@ function UploadModal({ onClose, onAdded }) {
           Feature on homepage
         </label>
       </div>
-      <div className="mt-5 flex justify-end gap-2">
+      <div className="mt-5 flex items-center justify-end gap-3">
+        {progress && <span className="text-sm text-navy-500">{progress}</span>}
         <button onClick={onClose} className="btn-secondary">
           Cancel
         </button>
         <button onClick={upload} disabled={busy} className="btn-primary">
-          {busy ? "Uploading…" : "Upload image"}
+          {busy ? "Uploading…" : "Upload"}
         </button>
       </div>
     </Modal>

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 
 const TYPE_LABELS = {
@@ -40,6 +40,8 @@ function defaultItemsFor(type) {
 function ImagePicker({ value, onChange }) {
   const [open, setOpen] = useState(false);
   const [images, setImages] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef();
 
   async function load() {
     const res = await fetch("/api/admin/images");
@@ -47,19 +49,46 @@ function ImagePicker({ value, onChange }) {
     setOpen(true);
   }
 
+  async function uploadFromDevice(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("noRecord", "true");
+    const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+    setUploading(false);
+    if (res.ok) {
+      const { src } = await res.json();
+      onChange(src);
+    } else {
+      alert("Upload failed — the file may be too large.");
+    }
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
   return (
     <div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <input
-          className="input"
-          placeholder="/images/example.jpg"
-          value={value || ""}
-          onChange={(e) => onChange(e.target.value)}
+          type="file"
+          accept="image/*"
+          ref={fileRef}
+          onChange={uploadFromDevice}
+          disabled={uploading}
+          className="max-w-[10.5rem] text-xs"
         />
-        <button type="button" className="btn-secondary shrink-0" onClick={load}>
-          Choose
+        <button type="button" className="btn-secondary shrink-0 text-sm" onClick={load}>
+          Choose from gallery
         </button>
+        {uploading && <span className="text-xs font-medium text-brand-600">Uploading…</span>}
       </div>
+      <input
+        className="input mt-2"
+        placeholder="/images/example.jpg"
+        value={value || ""}
+        onChange={(e) => onChange(e.target.value)}
+      />
       {value && (
         <div className="relative mt-2 h-24 w-24 overflow-hidden rounded-lg ring-1 ring-navy-100">
           <Image src={value} alt="" fill className="object-cover" />
@@ -100,6 +129,9 @@ function MediaItemsEditor({ items, onChange, withTitle = false, label = "Slides"
   const [videoUrl, setVideoUrl] = useState("");
   const [videoTitle, setVideoTitle] = useState("");
   const [videoCaption, setVideoCaption] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState("");
+  const fileRef = useRef();
 
   async function openPicker() {
     const res = await fetch("/api/admin/images");
@@ -123,6 +155,40 @@ function MediaItemsEditor({ items, onChange, withTitle = false, label = "Slides"
     setVideoCaption("");
   }
 
+  // Upload one or several images/videos straight from the admin's device.
+  // Files are uploaded one at a time (so a slow/large one doesn't block the
+  // rest) and each becomes its own new slide/card, appended in order.
+  async function handleFilesSelected(e) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploading(true);
+    const newItems = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      setProgress(`Uploading ${i + 1} of ${files.length}: ${file.name}`);
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("noRecord", "true");
+        const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+        if (!res.ok) throw new Error(await res.text());
+        const { src, kind } = await res.json();
+        newItems.push({
+          type: kind === "video" ? "video" : "image",
+          src,
+          title: "",
+          caption: "",
+        });
+      } catch {
+        alert(`Failed to upload "${file.name}" — it may be too large. Skipping.`);
+      }
+    }
+    if (newItems.length) onChange([...items, ...newItems]);
+    setUploading(false);
+    setProgress("");
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
   function updateField(i, field, value) {
     onChange(items.map((it, idx) => (idx === i ? { ...it, [field]: value } : it)));
   }
@@ -144,7 +210,7 @@ function MediaItemsEditor({ items, onChange, withTitle = false, label = "Slides"
       <label className="label">{label}</label>
       <div className="space-y-2">
         {items.length === 0 && (
-          <p className="text-sm text-navy-400">Nothing added yet — add an image or video below.</p>
+          <p className="text-sm text-navy-400">Nothing added yet — add photos/videos below.</p>
         )}
         {items.map((it, i) => (
           <div key={i} className="flex flex-wrap items-center gap-3 rounded-lg border border-navy-100 p-2">
@@ -185,33 +251,62 @@ function MediaItemsEditor({ items, onChange, withTitle = false, label = "Slides"
         ))}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <button type="button" className="btn-secondary" onClick={openPicker}>
-          + Add image
-        </button>
-        <input
-          className="input max-w-xs"
-          placeholder="Paste a YouTube link"
-          value={videoUrl}
-          onChange={(e) => setVideoUrl(e.target.value)}
-        />
-        {withTitle && (
+      <div className="mt-3 space-y-3 rounded-lg bg-navy-50 p-3">
+        <div>
+          <label className="label">
+            Add photos or videos from your device{" "}
+            <span className="font-normal text-navy-400">(select several at once)</span>
+          </label>
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              onChange={handleFilesSelected}
+              disabled={uploading}
+              className="text-sm"
+            />
+            {uploading && <span className="text-xs font-medium text-brand-600">{progress}</span>}
+          </div>
+          <p className="mt-1 text-xs text-navy-400">
+            Large video files may fail to upload depending on your hosting
+            plan — for videos, pasting a YouTube link below is more
+            reliable and loads faster for visitors.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 border-t border-navy-100 pt-3">
+          <button type="button" className="btn-secondary" onClick={openPicker}>
+            + Choose from existing gallery
+          </button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 border-t border-navy-100 pt-3">
+          <input
+            className="input max-w-xs"
+            placeholder="Or paste a YouTube link"
+            value={videoUrl}
+            onChange={(e) => setVideoUrl(e.target.value)}
+          />
+          {withTitle && (
+            <input
+              className="input max-w-[10rem]"
+              placeholder="Title (optional)"
+              value={videoTitle}
+              onChange={(e) => setVideoTitle(e.target.value)}
+            />
+          )}
           <input
             className="input max-w-[10rem]"
-            placeholder="Title (optional)"
-            value={videoTitle}
-            onChange={(e) => setVideoTitle(e.target.value)}
+            placeholder="Caption (optional)"
+            value={videoCaption}
+            onChange={(e) => setVideoCaption(e.target.value)}
           />
-        )}
-        <input
-          className="input max-w-[10rem]"
-          placeholder="Caption (optional)"
-          value={videoCaption}
-          onChange={(e) => setVideoCaption(e.target.value)}
-        />
-        <button type="button" className="btn-secondary" onClick={addVideo}>
-          + Add video
-        </button>
+          <button type="button" className="btn-secondary" onClick={addVideo}>
+            + Add video link
+          </button>
+        </div>
       </div>
 
       {picking && (

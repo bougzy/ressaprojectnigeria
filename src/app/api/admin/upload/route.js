@@ -8,11 +8,20 @@ export const runtime = "nodejs";
 
 /**
  * Handles a multipart/form-data upload:
- *   file      (required)  the image
+ *   file      (required)  the image or video
  *   category, year, alt, caption, featured  (optional metadata)
  *   replaceId (optional)  if present, replaces that image's src instead of
  *                         creating a new record (used by "change image").
- * Saves the file into /public/images and creates/updates the DB record.
+ *   noRecord  (optional)  if "true", just saves the file and returns its src
+ *                         without creating a GalleryImage DB record — used
+ *                         when a section (e.g. a carousel/card list) will
+ *                         store the src directly in its own items array.
+ * Saves the file into /public/images and (usually) creates/updates the DB
+ * record.
+ *
+ * NOTE: on Vercel, serverless functions have a request body size limit
+ * (a few MB). Small images upload fine; larger video files may fail with
+ * a 413 — paste a YouTube link instead for anything sizeable.
  */
 export async function POST(req) {
   try {
@@ -22,8 +31,11 @@ export async function POST(req) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
+    const isVideo =
+      (file.type || "").startsWith("video/") ||
+      /\.(mp4|webm|mov|m4v|avi|mkv|ogg)$/i.test(file.name || "");
     const bytes = Buffer.from(await file.arrayBuffer());
-    const safeBase = (file.name || "upload.jpg")
+    const safeBase = (file.name || (isVideo ? "upload.mp4" : "upload.jpg"))
       .toLowerCase()
       .replace(/[^a-z0-9.\-_]/g, "-");
     // Unique-ish name without Date.now (avoid collisions via random suffix)
@@ -33,6 +45,10 @@ export async function POST(req) {
     await fs.mkdir(dir, { recursive: true });
     await fs.writeFile(path.join(dir, filename), bytes);
     const src = `/images/${filename}`;
+
+    if (form.get("noRecord") === "true") {
+      return NextResponse.json({ src, kind: isVideo ? "video" : "image" });
+    }
 
     await dbConnect();
     const replaceId = form.get("replaceId");
@@ -66,7 +82,11 @@ export async function POST(req) {
       order: 999,
       featured: form.get("featured") === "true",
     });
-    return NextResponse.json({ ...doc.toObject(), _id: doc._id.toString() });
+    return NextResponse.json({
+      ...doc.toObject(),
+      _id: doc._id.toString(),
+      kind: isVideo ? "video" : "image",
+    });
   } catch (e) {
     console.error("upload error", e);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });

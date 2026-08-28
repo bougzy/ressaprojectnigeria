@@ -1,4 +1,5 @@
 import { getVideos } from "@/lib/content";
+import VideoEmbed from "@/components/VideoEmbed";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Videos" };
@@ -34,14 +35,8 @@ export default async function VideosPage() {
                   key={v._id}
                   className="overflow-hidden rounded-2xl ring-1 ring-navy-100"
                 >
-                  <div className="aspect-video">
-                    <iframe
-                      src={v.url}
-                      title={v.title}
-                      className="h-full w-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
+                  <div className="aspect-video bg-navy-900">
+                    <VideoEmbed src={v.url} title={v.title} />
                   </div>
                   <div className="p-6">
                     <h3 className="text-lg font-bold text-navy-900">
