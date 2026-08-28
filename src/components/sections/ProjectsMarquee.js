@@ -13,13 +13,17 @@ function Card({ item, onOpen }) {
       <div className="relative aspect-[4/3] w-full overflow-hidden">
         {item.type === "video" ? (
           <>
-            <Image
-              src={item.thumbnail || item.src}
-              alt={item.title || "Project video"}
-              fill
-              className="object-cover transition duration-500 group-hover:scale-105"
-              sizes="288px"
-            />
+            {item.thumbnail ? (
+              <Image
+                src={item.thumbnail}
+                alt={item.title || "Project video"}
+                fill
+                className="object-cover transition duration-500 group-hover:scale-105"
+                sizes="288px"
+              />
+            ) : (
+              <div className="h-full w-full bg-gradient-to-br from-navy-800 to-navy-950" />
+            )}
             <div className="absolute inset-0 flex items-center justify-center bg-black/30">
               <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-xl text-navy-900 shadow">
                 ▶
