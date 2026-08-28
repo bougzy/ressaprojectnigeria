@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import VideoEmbed from "@/components/VideoEmbed";
 
 export default function EventsCarousel({ items = [] }) {
   const [index, setIndex] = useState(0);
@@ -32,13 +33,10 @@ export default function EventsCarousel({ items = [] }) {
     >
       <div className="relative aspect-video overflow-hidden rounded-2xl bg-navy-900 shadow-xl ring-1 ring-navy-100">
         {item.type === "video" ? (
-          <iframe
+          <VideoEmbed
             key={item.src}
             src={item.src}
             title={item.caption || `Event video ${index + 1}`}
-            className="h-full w-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
           />
         ) : (
           <Image

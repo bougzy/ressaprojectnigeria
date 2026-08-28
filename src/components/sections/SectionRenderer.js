@@ -6,6 +6,7 @@ import Reveal from "@/components/anim/Reveal";
 import Confetti from "@/components/anim/Confetti";
 import CountUp from "@/components/anim/CountUp";
 import LogoImage from "@/components/LogoImage";
+import VideoEmbed from "@/components/VideoEmbed";
 import EventsCarousel from "./EventsCarousel";
 import ProjectsMarquee from "./ProjectsMarquee";
 
@@ -273,7 +274,7 @@ function VideoSection({ section, dark, videos }) {
           {list.map((v) => (
             <div key={v._id} className="overflow-hidden rounded-2xl ring-1 ring-navy-100">
               <div className="aspect-video">
-                <iframe src={v.url} title={v.title} className="h-full w-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                <VideoEmbed src={v.url} title={v.title} />
               </div>
               <div className="p-5">
                 <h3 className="font-bold text-navy-900">{v.title}</h3>

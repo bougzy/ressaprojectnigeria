@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { uploadFilesInBatches } from "@/lib/clientMedia";
+import VideoEmbed from "@/components/VideoEmbed";
 
 const empty = { title: "", url: "", description: "" };
 
@@ -216,7 +217,7 @@ export default function VideosManager() {
           return (
           <div key={v._id} className="card">
             <div className="relative aspect-video overflow-hidden rounded-lg">
-              <iframe src={v.url} title={v.title} className="h-full w-full" allowFullScreen />
+              <VideoEmbed src={v.url} title={v.title} />
               <span className="absolute left-2 top-2 rounded bg-black/70 px-2 py-0.5 text-[10px] font-bold text-white">
                 #{i + 1} in order
               </span>

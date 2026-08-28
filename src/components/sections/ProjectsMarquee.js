@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
+import VideoEmbed from "@/components/VideoEmbed";
 
 function Card({ item, onOpen }) {
   return (
@@ -76,13 +77,7 @@ export default function ProjectsMarquee({ items = [] }) {
           >
             <div className="relative aspect-video w-full bg-navy-900">
               {active.type === "video" ? (
-                <iframe
-                  src={active.src}
-                  title={active.title || "Project video"}
-                  className="h-full w-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
+                <VideoEmbed src={active.src} title={active.title || "Project video"} />
               ) : (
                 <Image
                   src={active.src}
