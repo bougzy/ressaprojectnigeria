@@ -49,6 +49,43 @@ export async function getVideos() {
 }
 
 const HOME_LAYOUT_V2_FLAG = "migrationHomeLayoutV2";
+const HOME_LAYOUT_V3_FLAG = "migrationHomeLayoutV3";
+
+/** Renumbers every home section to match DEFAULT_SECTIONS' canonical key
+ * order. Anything not in DEFAULT_SECTIONS (an admin's own custom section)
+ * keeps its relative order, appended after the known ones. Used by the
+ * one-time layout migrations below. */
+async function renumberHomeSectionsToDefaultOrder() {
+  const all = await Section.find({ page: "home" }).lean();
+  const priority = DEFAULT_SECTIONS.map((s) => s.key);
+  const known = all
+    .filter((s) => priority.includes(s.key))
+    .sort((a, b) => priority.indexOf(a.key) - priority.indexOf(b.key));
+  const custom = all
+    .filter((s) => !priority.includes(s.key))
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+  const ordered = [...known, ...custom];
+  await Promise.all(
+    ordered.map((s, i) => Section.findByIdAndUpdate(s._id, { order: i }))
+  );
+}
+
+/** One-time addition: appends any new hero slide images from
+ * DEFAULT_SECTIONS' hero.items that aren't already in the live hero
+ * section's items (matched by src) — used when new photos are added to
+ * the default hero slideshow after a site has already been seeded. Never
+ * removes, replaces, or reorders existing slides. */
+async function appendNewHeroSlides() {
+  const hero = await Section.findOne({ page: "home", key: "hero" });
+  if (!hero) return;
+  const def = DEFAULT_SECTIONS.find((s) => s.key === "hero");
+  if (!def?.items?.length) return;
+  const existingSrcs = new Set((hero.items || []).map((i) => i.src));
+  const toAdd = def.items.filter((i) => !existingSrcs.has(i.src));
+  if (!toAdd.length) return;
+  hero.items = [...(hero.items || []), ...toAdd];
+  await hero.save();
+}
 
 /**
  * Ensures every image listed in DEFAULT_EXTRA_IMAGES exists in the Images
@@ -123,6 +160,11 @@ export async function ensureHomeSectionsSeeded() {
       { $set: { key: HOME_LAYOUT_V2_FLAG, value: true } },
       { upsert: true }
     );
+    await Setting.updateOne(
+      { key: HOME_LAYOUT_V3_FLAG },
+      { $set: { key: HOME_LAYOUT_V3_FLAG, value: true } },
+      { upsert: true }
+    );
     return;
   }
 
@@ -138,27 +180,23 @@ export async function ensureHomeSectionsSeeded() {
   if (!flag?.value) {
     // Remove the old stats strip — replaced by the intro carousel.
     await Section.deleteOne({ page: "home", key: "stats" });
-
-    // Renumber every home section to match DEFAULT_SECTIONS' canonical
-    // order. Anything not in DEFAULT_SECTIONS (an admin's own custom
-    // section) keeps its relative order, appended after the known ones.
-    const all = await Section.find({ page: "home" }).lean();
-    const priority = DEFAULT_SECTIONS.map((s) => s.key);
-    const known = all
-      .filter((s) => priority.includes(s.key))
-      .sort((a, b) => priority.indexOf(a.key) - priority.indexOf(b.key));
-    const custom = all
-      .filter((s) => !priority.includes(s.key))
-      .sort((a, b) => (a.order || 0) - (b.order || 0));
-    const ordered = [...known, ...custom];
-
-    await Promise.all(
-      ordered.map((s, i) => Section.findByIdAndUpdate(s._id, { order: i }))
-    );
-
+    await renumberHomeSectionsToDefaultOrder();
     await Setting.updateOne(
       { key: HOME_LAYOUT_V2_FLAG },
       { $set: { key: HOME_LAYOUT_V2_FLAG, value: true } },
+      { upsert: true }
+    );
+  }
+
+  // v3: move "Our Office" up to right after "Who We Are", and add any new
+  // hero slideshow photos that were introduced after this site was seeded.
+  const flag3 = await Setting.findOne({ key: HOME_LAYOUT_V3_FLAG }).lean();
+  if (!flag3?.value) {
+    await renumberHomeSectionsToDefaultOrder();
+    await appendNewHeroSlides();
+    await Setting.updateOne(
+      { key: HOME_LAYOUT_V3_FLAG },
+      { $set: { key: HOME_LAYOUT_V3_FLAG, value: true } },
       { upsert: true }
     );
   }
@@ -171,6 +209,12 @@ export async function ensureHomeSectionsSeeded() {
  * Falls back to the built-in defaults if none have been seeded/created yet,
  * so the site never renders blank.
  */
+function sortedDefaultSections(onlyVisible) {
+  return [...DEFAULT_SECTIONS]
+    .filter((s) => !onlyVisible || s.visible !== false)
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+}
+
 export async function getSections(page = "home", { onlyVisible = true } = {}) {
   try {
     await dbConnect();
@@ -179,16 +223,12 @@ export async function getSections(page = "home", { onlyVisible = true } = {}) {
     if (onlyVisible) q.visible = { $ne: false };
     const rows = await Section.find(q).sort({ order: 1, createdAt: 1 }).lean();
     if (!rows.length && page === "home") {
-      return onlyVisible
-        ? DEFAULT_SECTIONS.filter((s) => s.visible !== false)
-        : DEFAULT_SECTIONS;
+      return sortedDefaultSections(onlyVisible);
     }
     return rows.map((r) => ({ ...r, _id: r._id.toString() }));
   } catch (e) {
     console.error("getSections fallback to defaults:", e.message);
-    return onlyVisible
-      ? DEFAULT_SECTIONS.filter((s) => s.visible !== false)
-      : DEFAULT_SECTIONS;
+    return sortedDefaultSections(onlyVisible);
   }
 }
 

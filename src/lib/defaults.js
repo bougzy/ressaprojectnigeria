@@ -163,6 +163,12 @@ export const DEFAULT_SECTIONS = [
       { type: "image", src: "/images/1-scaled.jpg", caption: "Handing over deeds — one plot of land at a time" },
       { type: "image", src: "/images/office/office-gate-banner.jpg", caption: "Teachers Must Become Landlords" },
       { type: "image", src: "/images/2-scaled.jpg", caption: "Our members, celebrating together" },
+      { type: "image", src: "/images/hero/hero-white-attire-group.jpg", caption: "Our team and subscribers at a RESSA event" },
+      { type: "image", src: "/images/hero/hero-rotary-golf-team.jpg", caption: "RESSA at the Rotary District 9112 charity golf tournament" },
+      { type: "image", src: "/images/hero/hero-flyer-llsc-2022.jpg", caption: "RESSA Intending Landlords' & Landladies' 2022 Support Conference" },
+      { type: "image", src: "/images/hero/hero-ressa-pac-plc-badge.jpg", caption: "PAC Estate & PLC Gardens — Ressa Project Nigeria" },
+      { type: "image", src: "/images/hero/hero-flyer-teachers-landlords.jpg", caption: "Teachers Must Become Landlords Support Program" },
+      { type: "image", src: "/images/hero/hero-flyer-llsc-2023.jpg", caption: "RESSA Intending Landlords' & Landladies' 2023 Support Conference" },
     ],
   },
   {
@@ -213,7 +219,7 @@ export const DEFAULT_SECTIONS = [
   {
     key: "featured-projects",
     type: "gallery",
-    order: 4,
+    order: 5,
     visible: true,
     bg: "white",
     eyebrow: "Our work",
@@ -227,7 +233,7 @@ export const DEFAULT_SECTIONS = [
   {
     key: "our-projects",
     type: "projectCards",
-    order: 5,
+    order: 6,
     visible: true,
     bg: "light",
     eyebrow: "Portfolio",
@@ -275,7 +281,7 @@ export const DEFAULT_SECTIONS = [
   {
     key: "services",
     type: "services",
-    order: 6,
+    order: 7,
     visible: true,
     bg: "light",
     eyebrow: "What we offer",
@@ -316,7 +322,7 @@ export const DEFAULT_SECTIONS = [
   {
     key: "events",
     type: "gallery",
-    order: 7,
+    order: 8,
     visible: true,
     bg: "light",
     eyebrow: "Community",
@@ -332,7 +338,7 @@ export const DEFAULT_SECTIONS = [
   {
     key: "videos",
     type: "video",
-    order: 8,
+    order: 9,
     visible: true,
     bg: "white",
     eyebrow: "Ressa videos",
@@ -343,7 +349,7 @@ export const DEFAULT_SECTIONS = [
   {
     key: "testimonials",
     type: "testimonials",
-    order: 9,
+    order: 10,
     visible: false,
     bg: "light",
     eyebrow: "Testimonials",
@@ -359,7 +365,7 @@ export const DEFAULT_SECTIONS = [
   {
     key: "faq",
     type: "faq",
-    order: 10,
+    order: 11,
     visible: false,
     bg: "white",
     eyebrow: "FAQ",
@@ -374,7 +380,7 @@ export const DEFAULT_SECTIONS = [
   {
     key: "cta-banner",
     type: "cta",
-    order: 11,
+    order: 12,
     visible: true,
     bg: "gradient",
     title: "Ready to become a landlord?",
@@ -385,7 +391,7 @@ export const DEFAULT_SECTIONS = [
   {
     key: "events-carousel",
     type: "carousel",
-    order: 12,
+    order: 13,
     visible: true,
     bg: "light",
     eyebrow: "Community",
@@ -401,7 +407,7 @@ export const DEFAULT_SECTIONS = [
   {
     key: "image-text-block",
     type: "imageBlock",
-    order: 13,
+    order: 14,
     visible: true,
     bg: "white",
     image: "",
@@ -411,7 +417,7 @@ export const DEFAULT_SECTIONS = [
   {
     key: "our-office",
     type: "carousel",
-    order: 14,
+    order: 4,
     visible: true,
     bg: "white",
     eyebrow: "Visit Us",
