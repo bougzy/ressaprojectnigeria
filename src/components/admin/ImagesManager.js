@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import { compressImageFile, uploadFilesInBatches } from "@/lib/clientMedia";
 
 const CATEGORIES = ["hero", "flyer", "project", "event", "logo", "about", "misc"];
 
@@ -185,8 +186,8 @@ export default function ImagesManager() {
       {uploadOpen && (
         <UploadModal
           onClose={() => setUploadOpen(false)}
-          onAdded={(doc) => {
-            setImages((x) => [...x, doc]);
+          onAdded={(docs) => {
+            setImages((x) => [...x, ...docs]);
             setUploadOpen(false);
           }}
         />
@@ -222,12 +223,17 @@ function EditModal({ img, onClose, onSaved }) {
     const file = fileRef.current?.files?.[0];
     if (!file) return alert("Choose a file first");
     setBusy(true);
+    const compressed = await compressImageFile(file);
     const fd = new FormData();
-    fd.append("file", file);
+    fd.append("file", compressed, compressed.name);
     fd.append("replaceId", img._id);
     const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
     setBusy(false);
     if (res.ok) onSaved(await res.json());
+    else {
+      const j = await res.json().catch(() => ({}));
+      alert(j.error || "Upload failed");
+    }
   }
 
   return (
@@ -317,10 +323,12 @@ function EditModal({ img, onClose, onSaved }) {
   );
 }
 
-/* ---------------- Upload / Add new image(s) ---------------- */
+/* ---------------- Add / Upload image(s) ---------------- */
 function UploadModal({ onClose, onAdded }) {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState("");
+  const [files, setFiles] = useState([]); // File[] picked from the device
+  const [previews, setPreviews] = useState([]); // object URLs, same order as files
   const [meta, setMeta] = useState({
     category: "event",
     year: "",
@@ -330,34 +338,84 @@ function UploadModal({ onClose, onAdded }) {
   });
   const fileRef = useRef();
 
+  function pickFiles(e) {
+    const picked = Array.from(e.target.files || []);
+    setFiles(picked);
+    setPreviews((old) => {
+      old.forEach((u) => URL.revokeObjectURL(u));
+      return picked.map((f) => URL.createObjectURL(f));
+    });
+  }
+
+  function removeAt(i) {
+    setFiles((f) => f.filter((_, idx) => idx !== i));
+    setPreviews((p) => {
+      URL.revokeObjectURL(p[i]);
+      return p.filter((_, idx) => idx !== i);
+    });
+  }
+
   async function upload() {
-    const files = Array.from(fileRef.current?.files || []);
-    if (!files.length) return alert("Choose at least one file");
+    if (!files.length) return alert("Choose one or more image files first");
     setBusy(true);
+    const compressed = [];
     for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      setProgress(files.length > 1 ? `Uploading ${i + 1} of ${files.length}…` : "Uploading…");
-      const fd = new FormData();
-      fd.append("file", file);
-      Object.entries(meta).forEach(([k, v]) => fd.append(k, String(v)));
-      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-      if (res.ok) onAdded(await res.json());
-      else alert(`Failed to upload "${file.name}"`);
+      setProgress(`Compressing image ${i + 1} of ${files.length}…`);
+      compressed.push(await compressImageFile(files[i]));
     }
+    setProgress(`Uploading ${compressed.length} image${compressed.length === 1 ? "" : "s"}…`);
+    const { results, errors } = await uploadFilesInBatches(compressed, meta, "image");
     setBusy(false);
     setProgress("");
+    if (results.length) onAdded(results);
+    if (errors.length) alert(errors.join("\n\n"));
+    else if (!results.length) alert("Upload failed");
   }
 
   return (
-    <Modal title="Add new image(s)" onClose={onClose}>
+    <Modal title="Add / upload image(s)" onClose={onClose}>
       <div className="space-y-3">
         <div>
-          <label className="label">Image file(s) — select several at once if you like</label>
-          <input type="file" accept="image/*" multiple ref={fileRef} className="text-sm" />
+          <label className="label">Image file(s) — pick one or several from your device</label>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            ref={fileRef}
+            onChange={pickFiles}
+            className="text-sm"
+          />
+          <p className="mt-1 text-xs text-navy-400">
+            Large photos are automatically resized so they load quickly on the site.
+          </p>
         </div>
+
+        {previews.length > 0 && (
+          <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+            {previews.map((src, i) => (
+              <div key={src} className="group relative aspect-square overflow-hidden rounded-lg ring-1 ring-navy-100">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={src} alt="" className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => removeAt(i)}
+                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-xs text-white opacity-0 transition group-hover:opacity-100"
+                  aria-label="Remove"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <p className="text-xs font-medium text-navy-500">
+          The details below apply to every image selected above.
+        </p>
+
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="label">Category (applied to all selected)</label>
+            <label className="label">Category</label>
             <select
               className="input"
               value={meta.category}
@@ -379,7 +437,7 @@ function UploadModal({ onClose, onAdded }) {
           </div>
         </div>
         <div>
-          <label className="label">Alt text</label>
+          <label className="label">Alt text (leave blank to use each file's name)</label>
           <input
             className="input"
             value={meta.alt}
@@ -400,10 +458,13 @@ function UploadModal({ onClose, onAdded }) {
         <button onClick={onClose} className="btn-secondary">
           Cancel
         </button>
-        <button onClick={upload} disabled={busy} className="btn-primary">
-          {busy ? "Uploading…" : "Upload"}
+        <button onClick={upload} disabled={busy || !files.length} className="btn-primary">
+          {busy
+            ? "Uploading…"
+            : `Upload ${files.length || ""} image${files.length === 1 ? "" : "s"}`.trim()}
         </button>
       </div>
+
     </Modal>
   );
 }

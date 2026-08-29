@@ -17,12 +17,12 @@ export default function Footer({ settings }) {
             <LogoImage
               src={s.logo}
               alt={s.siteName || "Ressa"}
-              width={56}
-              height={56}
+              width={72}
+              height={72}
               animate
-              className="h-14 w-14 bg-white p-0.5 shadow-lg"
+              className="h-16 w-16 bg-white p-0.5 shadow-lg"
             />
-            <span className="text-base font-extrabold text-white">
+            <span className="text-lg font-extrabold text-white">
               RESSA
               <span className="block text-xs font-medium text-brand-400">
                 Project Nigeria

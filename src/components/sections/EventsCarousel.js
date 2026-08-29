@@ -33,7 +33,11 @@ export default function EventsCarousel({ items = [] }) {
     >
       <div className="relative aspect-video overflow-hidden rounded-2xl bg-navy-900 shadow-xl ring-1 ring-navy-100">
         {item.type === "video" ? (
-          <VideoEmbed src={item.src} title={item.caption || `Event video ${index + 1}`} />
+          <VideoEmbed
+            key={item.src}
+            src={item.src}
+            title={item.caption || `Event video ${index + 1}`}
+          />
         ) : (
           <Image
             key={item.src}

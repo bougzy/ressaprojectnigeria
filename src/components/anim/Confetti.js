@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 
-const COLORS = ["#fc5a13", "#ec1e8c", "#3568bb", "#ffd23f", "#25d366", "#ffffff"];
+const COLORS = ["#dc2626", "#123a8f", "#ffffff", "#ffd23f", "#f5c2c2"];
 
 /**
  * A lightweight CSS confetti burst. Fires on mount and can be re-fired by

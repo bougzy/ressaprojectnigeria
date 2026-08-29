@@ -19,8 +19,8 @@ export const FONT_OPTIONS = [
 ];
 
 export const DEFAULT_THEME = {
-  primary: "#fc5a13", // orange — mirrors the original brand-500
-  secondary: "#0f2347", // navy — mirrors the original navy-900
+  primary: "#dc2626", // red — matches the RESSA logo wordmark
+  secondary: "#123a8f", // blue — matches the RESSA logo emblem
   fontHeading: "Inter",
   fontBody: "Inter",
   radius: "rounded", // rounded | soft | sharp

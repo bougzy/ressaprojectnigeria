@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { GalleryImage } from "@/lib/models";
+import { ensureExtraImagesSeeded } from "@/lib/content";
 
 export const dynamic = "force-dynamic";
 
 // List all images
 export async function GET() {
   await dbConnect();
+  await ensureExtraImagesSeeded();
   const imgs = await GalleryImage.find({}).sort({ order: 1, createdAt: 1 }).lean();
   return NextResponse.json(
     imgs.map((i) => ({ ...i, _id: i._id.toString() }))

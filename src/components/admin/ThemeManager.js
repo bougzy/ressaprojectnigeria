@@ -21,7 +21,8 @@ const RADIUS_OPTIONS = [
 ];
 
 const PRESETS = [
-  { name: "Ressa Orange & Navy", primary: "#fc5a13", secondary: "#0f2347" },
+  { name: "Ressa Red & Blue", primary: "#dc2626", secondary: "#123a8f" },
+  { name: "Ressa Orange & Navy (classic)", primary: "#fc5a13", secondary: "#0f2347" },
   { name: "Emerald & Charcoal", primary: "#059669", secondary: "#1f2937" },
   { name: "Royal Blue & Slate", primary: "#2563eb", secondary: "#0f172a" },
   { name: "Gold & Deep Green", primary: "#d4a017", secondary: "#0b3d2e" },
@@ -40,8 +41,8 @@ export default function ThemeManager() {
       const data = await res.json();
       setTheme(
         data.theme || {
-          primary: "#fc5a13",
-          secondary: "#0f2347",
+          primary: "#dc2626",
+          secondary: "#123a8f",
           fontHeading: "Inter",
           fontBody: "Inter",
           radius: "rounded",

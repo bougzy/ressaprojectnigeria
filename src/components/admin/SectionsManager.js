@@ -1,6 +1,7 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
+import { compressImageFile, uploadFilesInBatches } from "@/lib/clientMedia";
 
 const TYPE_LABELS = {
   hero: "🦸 Hero (top banner)",
@@ -41,7 +42,6 @@ function ImagePicker({ value, onChange }) {
   const [open, setOpen] = useState(false);
   const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const fileRef = useRef();
 
   async function load() {
     const res = await fetch("/api/admin/images");
@@ -49,46 +49,34 @@ function ImagePicker({ value, onChange }) {
     setOpen(true);
   }
 
-  async function uploadFromDevice(e) {
+  async function uploadNew(e) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("noRecord", "true");
-    const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+    const compressed = await compressImageFile(file);
+    const { results, errors } = await uploadFilesInBatches([compressed], { category: "misc" }, "image");
     setUploading(false);
-    if (res.ok) {
-      const { src } = await res.json();
-      onChange(src);
-    } else {
-      alert("Upload failed — the file may be too large.");
+    e.target.value = "";
+    if (results[0]) {
+      onChange(results[0].src);
+      setOpen(false);
     }
-    if (fileRef.current) fileRef.current.value = "";
+    if (errors.length) alert(errors.join("\n\n"));
   }
 
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-2">
         <input
-          type="file"
-          accept="image/*"
-          ref={fileRef}
-          onChange={uploadFromDevice}
-          disabled={uploading}
-          className="max-w-[10.5rem] text-xs"
+          className="input"
+          placeholder="/images/example.jpg"
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
         />
-        <button type="button" className="btn-secondary shrink-0 text-sm" onClick={load}>
-          Choose from gallery
+        <button type="button" className="btn-secondary shrink-0" onClick={load}>
+          Choose
         </button>
-        {uploading && <span className="text-xs font-medium text-brand-600">Uploading…</span>}
       </div>
-      <input
-        className="input mt-2"
-        placeholder="/images/example.jpg"
-        value={value || ""}
-        onChange={(e) => onChange(e.target.value)}
-      />
       {value && (
         <div className="relative mt-2 h-24 w-24 overflow-hidden rounded-lg ring-1 ring-navy-100">
           <Image src={value} alt="" fill className="object-cover" />
@@ -100,6 +88,13 @@ function ImagePicker({ value, onChange }) {
             <div className="mb-3 flex items-center justify-between">
               <h4 className="font-bold text-navy-900">Choose an image</h4>
               <button className="text-navy-400" onClick={() => setOpen(false)}>✕</button>
+            </div>
+            <div className="mb-3 flex items-center gap-2 rounded-lg bg-navy-50 p-2.5">
+              <label className="text-sm font-medium text-navy-700 shrink-0">
+                Or upload from your device:
+              </label>
+              <input type="file" accept="image/*" onChange={uploadNew} disabled={uploading} className="text-sm" />
+              {uploading && <span className="text-sm text-navy-500">Uploading…</span>}
             </div>
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
               {images.map((img) => (
@@ -129,9 +124,9 @@ function MediaItemsEditor({ items, onChange, withTitle = false, label = "Slides"
   const [videoUrl, setVideoUrl] = useState("");
   const [videoTitle, setVideoTitle] = useState("");
   const [videoCaption, setVideoCaption] = useState("");
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState("");
-  const fileRef = useRef();
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadingVideos, setUploadingVideos] = useState(false);
+  const [uploadMsg, setUploadMsg] = useState("");
 
   async function openPicker() {
     const res = await fetch("/api/admin/images");
@@ -144,6 +139,54 @@ function MediaItemsEditor({ items, onChange, withTitle = false, label = "Slides"
     setPicking(false);
   }
 
+  // Upload several local image files at once and add each as a new slide —
+  // no need to add them to the library first.
+  async function uploadImages(e) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploadingImages(true);
+    const compressed = [];
+    for (let i = 0; i < files.length; i++) {
+      setUploadMsg(`Compressing image ${i + 1} of ${files.length}…`);
+      compressed.push(await compressImageFile(files[i]));
+    }
+    setUploadMsg(`Uploading ${compressed.length} image${compressed.length === 1 ? "" : "s"}…`);
+    const { results, errors } = await uploadFilesInBatches(compressed, { category: "misc" }, "image");
+    setUploadingImages(false);
+    setUploadMsg("");
+    e.target.value = "";
+    if (results.length) {
+      onChange([...items, ...results.map((r) => ({ type: "image", src: r.src, title: "", caption: "" }))]);
+    }
+    if (errors.length) alert(errors.join("\n\n"));
+  }
+
+  // Upload several short local video clips at once and add each as a new
+  // slide. Longer videos should use the "paste a YouTube link" option
+  // instead, since uploaded clips are capped to keep pages loading fast.
+  async function uploadVideos(e) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploadingVideos(true);
+    setUploadMsg(`Uploading ${files.length} video${files.length === 1 ? "" : "s"}…`);
+    const { results, errors } = await uploadFilesInBatches(
+      files,
+      {},
+      "video",
+      3.5 * 1024 * 1024
+    );
+    setUploadingVideos(false);
+    setUploadMsg("");
+    e.target.value = "";
+    if (results.length) {
+      onChange([
+        ...items,
+        ...results.map((r) => ({ type: "video", src: r.url, title: r.title || "", caption: "" })),
+      ]);
+    }
+    if (errors.length) alert(errors.join("\n\n"));
+  }
+
   function addVideo() {
     if (!videoUrl.trim()) return;
     onChange([
@@ -153,40 +196,6 @@ function MediaItemsEditor({ items, onChange, withTitle = false, label = "Slides"
     setVideoUrl("");
     setVideoTitle("");
     setVideoCaption("");
-  }
-
-  // Upload one or several images/videos straight from the admin's device.
-  // Files are uploaded one at a time (so a slow/large one doesn't block the
-  // rest) and each becomes its own new slide/card, appended in order.
-  async function handleFilesSelected(e) {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) return;
-    setUploading(true);
-    const newItems = [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      setProgress(`Uploading ${i + 1} of ${files.length}: ${file.name}`);
-      try {
-        const fd = new FormData();
-        fd.append("file", file);
-        fd.append("noRecord", "true");
-        const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-        if (!res.ok) throw new Error(await res.text());
-        const { src, kind } = await res.json();
-        newItems.push({
-          type: kind === "video" ? "video" : "image",
-          src,
-          title: "",
-          caption: "",
-        });
-      } catch {
-        alert(`Failed to upload "${file.name}" — it may be too large. Skipping.`);
-      }
-    }
-    if (newItems.length) onChange([...items, ...newItems]);
-    setUploading(false);
-    setProgress("");
-    if (fileRef.current) fileRef.current.value = "";
   }
 
   function updateField(i, field, value) {
@@ -210,7 +219,7 @@ function MediaItemsEditor({ items, onChange, withTitle = false, label = "Slides"
       <label className="label">{label}</label>
       <div className="space-y-2">
         {items.length === 0 && (
-          <p className="text-sm text-navy-400">Nothing added yet — add photos/videos below.</p>
+          <p className="text-sm text-navy-400">Nothing added yet — add an image or video below.</p>
         )}
         {items.map((it, i) => (
           <div key={i} className="flex flex-wrap items-center gap-3 rounded-lg border border-navy-100 p-2">
@@ -251,63 +260,62 @@ function MediaItemsEditor({ items, onChange, withTitle = false, label = "Slides"
         ))}
       </div>
 
-      <div className="mt-3 space-y-3 rounded-lg bg-navy-50 p-3">
-        <div>
-          <label className="label">
-            Add photos or videos from your device{" "}
-            <span className="font-normal text-navy-400">(select several at once)</span>
-          </label>
-          <div className="flex flex-wrap items-center gap-3">
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*,video/*"
-              multiple
-              onChange={handleFilesSelected}
-              disabled={uploading}
-              className="text-sm"
-            />
-            {uploading && <span className="text-xs font-medium text-brand-600">{progress}</span>}
-          </div>
-          <p className="mt-1 text-xs text-navy-400">
-            Large video files may fail to upload depending on your hosting
-            plan — for videos, pasting a YouTube link below is more
-            reliable and loads faster for visitors.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3 border-t border-navy-100 pt-3">
-          <button type="button" className="btn-secondary" onClick={openPicker}>
-            + Choose from existing gallery
-          </button>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3 border-t border-navy-100 pt-3">
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <button type="button" className="btn-secondary" onClick={openPicker}>
+          + Add image
+        </button>
+        <label className="btn-secondary cursor-pointer">
+          {uploadingImages ? "Uploading…" : "+ Upload image(s) from device"}
           <input
-            className="input max-w-xs"
-            placeholder="Or paste a YouTube link"
-            value={videoUrl}
-            onChange={(e) => setVideoUrl(e.target.value)}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={uploadImages}
+            disabled={uploadingImages}
+            className="hidden"
           />
-          {withTitle && (
-            <input
-              className="input max-w-[10rem]"
-              placeholder="Title (optional)"
-              value={videoTitle}
-              onChange={(e) => setVideoTitle(e.target.value)}
-            />
-          )}
+        </label>
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-3">
+        <input
+          className="input max-w-xs"
+          placeholder="Paste a YouTube link"
+          value={videoUrl}
+          onChange={(e) => setVideoUrl(e.target.value)}
+        />
+        {withTitle && (
           <input
             className="input max-w-[10rem]"
-            placeholder="Caption (optional)"
-            value={videoCaption}
-            onChange={(e) => setVideoCaption(e.target.value)}
+            placeholder="Title (optional)"
+            value={videoTitle}
+            onChange={(e) => setVideoTitle(e.target.value)}
           />
-          <button type="button" className="btn-secondary" onClick={addVideo}>
-            + Add video link
-          </button>
-        </div>
+        )}
+        <input
+          className="input max-w-[10rem]"
+          placeholder="Caption (optional)"
+          value={videoCaption}
+          onChange={(e) => setVideoCaption(e.target.value)}
+        />
+        <button type="button" className="btn-secondary" onClick={addVideo}>
+          + Add video
+        </button>
+        <label className="btn-secondary cursor-pointer">
+          {uploadingVideos ? "Uploading…" : "+ Upload video file(s) from device"}
+          <input
+            type="file"
+            accept="video/*"
+            multiple
+            onChange={uploadVideos}
+            disabled={uploadingVideos}
+            className="hidden"
+          />
+        </label>
       </div>
+      {uploadMsg && <p className="mt-1 text-xs text-navy-500">{uploadMsg}</p>}
+      <p className="mt-1 text-xs text-navy-400">
+        Uploaded video clips work best under ~3.5MB each. For longer videos, paste a YouTube link instead.
+      </p>
 
       {picking && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setPicking(false)}>
@@ -357,7 +365,7 @@ function SectionThumb({ section, images, videos }) {
   const t = section.type;
   const box = "relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-navy-800 ring-2 ring-white";
 
-  if (["hero", "richtext", "imageBlock"].includes(t)) {
+  if (["richtext", "imageBlock"].includes(t)) {
     if (section.image) {
       return (
         <div className={box}>
@@ -372,7 +380,7 @@ function SectionThumb({ section, images, videos }) {
     );
   }
 
-  if (["carousel", "projectCards"].includes(t)) {
+  if (["hero", "carousel", "projectCards"].includes(t)) {
     const items = Array.isArray(section.items) ? section.items : [];
     if (!items.length) {
       return (
@@ -451,16 +459,17 @@ function SectionThumb({ section, images, videos }) {
    shown under the title so an admin doesn't have to open it to know. */
 function sectionSummary(section, images, videos) {
   const t = section.type;
-  if (["hero", "richtext", "imageBlock"].includes(t)) {
+  if (["richtext", "imageBlock"].includes(t)) {
     return section.image
       ? "Custom image set"
       : "No image chosen — falls back to a default photo";
   }
-  if (["carousel", "projectCards"].includes(t)) {
+  if (["hero", "carousel", "projectCards"].includes(t)) {
     const items = Array.isArray(section.items) ? section.items : [];
     const imgCount = items.filter((i) => i.type !== "video").length;
     const vidCount = items.filter((i) => i.type === "video").length;
-    if (!items.length) return "No slides added yet";
+    if (!items.length)
+      return t === "hero" ? "No slides added yet — falls back to a plain background" : "No slides added yet";
     const parts = [];
     if (imgCount) parts.push(`${imgCount} photo${imgCount === 1 ? "" : "s"}`);
     if (vidCount) parts.push(`${vidCount} video${vidCount === 1 ? "" : "s"}`);
@@ -500,7 +509,7 @@ function SectionEditor({ section, onChange }) {
   }
 
   const showItems = ["stats", "services", "testimonials", "faq", "marquee"].includes(t);
-  const showImage = ["hero", "richtext", "imageBlock"].includes(t);
+  const showImage = ["richtext", "imageBlock"].includes(t);
   const showBody = ["richtext", "cta", "imageBlock"].includes(t);
   const showTitle = t !== "marquee" && t !== "imageBlock";
   const showEyebrow = ["hero", "richtext", "services", "gallery", "video", "testimonials", "faq", "carousel", "projectCards"].includes(t);
@@ -509,7 +518,7 @@ function SectionEditor({ section, onChange }) {
   const showCta2 = t === "hero";
   const showGalleryOpts = t === "gallery";
   const showVideoOpts = t === "video";
-  const showCarouselOpts = t === "carousel";
+  const showCarouselOpts = t === "carousel" || t === "hero";
   const showProjectCardsOpts = t === "projectCards";
 
   return (
@@ -636,7 +645,7 @@ function SectionEditor({ section, onChange }) {
 
       {showCarouselOpts && (
         <MediaItemsEditor
-          label="Carousel slides"
+          label={t === "hero" ? "Hero slider images" : "Carousel slides"}
           items={Array.isArray(section.items) ? section.items : []}
           onChange={(items) => set("items", items)}
         />

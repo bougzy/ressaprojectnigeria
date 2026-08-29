@@ -1,6 +1,6 @@
 import { dbConnect } from "./mongodb";
 import { GalleryImage, Video, Setting, Section } from "./models";
-import { DEFAULT_SETTINGS, DEFAULT_SECTIONS } from "./defaults";
+import { DEFAULT_SETTINGS, DEFAULT_SECTIONS, DEFAULT_EXTRA_IMAGES } from "./defaults";
 
 /**
  * Returns the merged settings object (DB values override defaults). Falls back
@@ -23,6 +23,7 @@ export async function getSettings() {
 export async function getImages(filter = {}) {
   try {
     await dbConnect();
+    await ensureExtraImagesSeeded();
     const q = {};
     if (filter.category) q.category = filter.category;
     if (filter.year) q.year = filter.year;
@@ -48,6 +49,54 @@ export async function getVideos() {
 }
 
 const HOME_LAYOUT_V2_FLAG = "migrationHomeLayoutV2";
+
+/**
+ * Ensures every image listed in DEFAULT_EXTRA_IMAGES exists in the Images
+ * library — inserting only the ones that are missing (matched by src), so
+ * new curated images can be added to the codebase later and will appear
+ * automatically without ever duplicating or resetting the admin's own
+ * uploads. Safe to call on every request.
+ */
+export async function ensureExtraImagesSeeded() {
+  if (!DEFAULT_EXTRA_IMAGES?.length) return;
+  await dbConnect();
+  const srcs = DEFAULT_EXTRA_IMAGES.map((i) => i.src);
+  const existing = await GalleryImage.find({ src: { $in: srcs } }, { src: 1 }).lean();
+  const existingSrc = new Set(existing.map((i) => i.src));
+  const missing = DEFAULT_EXTRA_IMAGES.filter((i) => !existingSrc.has(i.src));
+  if (!missing.length) return;
+  const top = await GalleryImage.find({}).sort({ order: -1 }).limit(1).lean();
+  const start = (top[0]?.order || 0) + 1;
+  await GalleryImage.insertMany(
+    missing.map((i, idx) => ({
+      src: i.src,
+      alt: i.alt || "",
+      caption: i.caption || "",
+      category: i.category || "misc",
+      year: i.year || "",
+      order: start + idx,
+      featured: !!i.featured,
+    }))
+  );
+}
+
+/**
+ * One-time upgrade: if the homepage hero section still has no slider
+ * images (i.e. it predates the hero-carousel redesign), populate it with
+ * the current default slides. Never overwrites a hero that already has
+ * slides — including ones the admin has customised themselves — so this
+ * is safe to call on every request and only acts once per site.
+ */
+export async function ensureHeroSliderSeeded() {
+  await dbConnect();
+  const hero = await Section.findOne({ page: "home", key: "hero" });
+  if (!hero) return;
+  if (Array.isArray(hero.items) && hero.items.length > 0) return;
+  const def = DEFAULT_SECTIONS.find((s) => s.key === "hero");
+  if (!def?.items?.length) return;
+  hero.items = def.items;
+  await hero.save();
+}
 
 /**
  * Ensures every section defined in DEFAULT_SECTIONS exists in the DB for the
@@ -85,7 +134,6 @@ export async function ensureHomeSectionsSeeded() {
       missing.map((s, i) => ({ ...s, page: "home", order: maxOrder + 1 + i }))
     );
   }
-
   const flag = await Setting.findOne({ key: HOME_LAYOUT_V2_FLAG }).lean();
   if (!flag?.value) {
     // Remove the old stats strip — replaced by the intro carousel.
@@ -114,6 +162,8 @@ export async function ensureHomeSectionsSeeded() {
       { upsert: true }
     );
   }
+
+  await ensureHeroSliderSeeded();
 }
 
 /**

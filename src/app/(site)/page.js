@@ -22,6 +22,8 @@ export default async function HomePage() {
           section={section}
           videos={videos}
           fallbackImage={fallbackImage}
+          logo={s.logo}
+          siteName={s.siteName}
         />
       ))}
     </>

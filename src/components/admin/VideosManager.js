@@ -1,17 +1,9 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { uploadFilesInBatches } from "@/lib/clientMedia";
 import VideoEmbed from "@/components/VideoEmbed";
 
 const empty = { title: "", url: "", description: "" };
-
-function prettyFilename(name) {
-  return name
-    .replace(/\.[^.]+$/, "")
-    .replace(/[-_]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
 
 /* Video-type sections show the first N videos from this list, in the exact
    order they appear here (see VideoSection in SectionRenderer.js). So a
@@ -54,8 +46,6 @@ export default function VideosManager() {
   const [form, setForm] = useState(empty);
   const [editId, setEditId] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState("");
-  const fileRef = useRef();
 
   async function load() {
     const [vidRes, secRes] = await Promise.all([
@@ -70,6 +60,31 @@ export default function VideosManager() {
   }, []);
 
   const usage = useMemo(() => computeVideoUsage(videos, sections), [videos, sections]);
+
+  const [uploadFiles, setUploadFiles] = useState([]);
+  const [uploadBusy, setUploadBusy] = useState(false);
+  const [uploadMsg, setUploadMsg] = useState("");
+  const fileRef = useRef();
+
+  async function uploadLocalVideos() {
+    if (!uploadFiles.length) return alert("Choose one or more video files first");
+    setUploadBusy(true);
+    setUploadMsg(`Uploading ${uploadFiles.length} video${uploadFiles.length === 1 ? "" : "s"}…`);
+    const { results, errors } = await uploadFilesInBatches(
+      uploadFiles,
+      { description: form.description },
+      "video",
+      3.5 * 1024 * 1024
+    );
+    setUploadBusy(false);
+    setUploadMsg("");
+    if (results.length) {
+      setUploadFiles([]);
+      if (fileRef.current) fileRef.current.value = "";
+      load();
+    }
+    if (errors.length) alert(errors.join("\n\n"));
+  }
 
   async function submit(e) {
     e.preventDefault();
@@ -87,38 +102,6 @@ export default function VideosManager() {
       setEditId(null);
       load();
     } else alert("Failed to save video");
-  }
-
-  // Upload one or several video files straight from this device. Each file
-  // becomes its own video entry (title guessed from the filename — you can
-  // rename it afterwards with Edit).
-  async function handleFilesSelected(e) {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) return;
-    setBusy(true);
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      setUploadProgress(`Uploading ${i + 1} of ${files.length}: ${file.name}`);
-      try {
-        const fd = new FormData();
-        fd.append("file", file);
-        fd.append("noRecord", "true");
-        const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-        if (!res.ok) throw new Error(await res.text());
-        const { src } = await res.json();
-        await fetch("/api/admin/videos", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: prettyFilename(file.name), url: src, description: "" }),
-        });
-      } catch {
-        alert(`Failed to upload "${file.name}" — it may be too large for this hosting plan.`);
-      }
-    }
-    setBusy(false);
-    setUploadProgress("");
-    if (fileRef.current) fileRef.current.value = "";
-    load();
   }
 
   async function remove(id) {
@@ -141,33 +124,6 @@ export default function VideosManager() {
         <h3 className="font-bold text-navy-900">
           {editId ? "Edit video" : "Add a video"}
         </h3>
-
-        {!editId && (
-          <div className="rounded-lg bg-navy-50 p-3">
-            <label className="label">
-              Upload video file(s) from your device{" "}
-              <span className="font-normal text-navy-400">(select several at once)</span>
-            </label>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="video/*"
-              multiple
-              onChange={handleFilesSelected}
-              disabled={busy}
-              className="text-sm"
-            />
-            {uploadProgress && (
-              <p className="mt-1 text-xs font-medium text-brand-600">{uploadProgress}</p>
-            )}
-            <p className="mt-1 text-xs text-navy-400">
-              Large files may fail to upload depending on your hosting plan —
-              pasting a YouTube link below is more reliable and loads faster
-              for visitors.
-            </p>
-          </div>
-        )}
-
         <div>
           <label className="label">Title *</label>
           <input
@@ -216,6 +172,39 @@ export default function VideosManager() {
             </button>
           )}
         </div>
+
+        {!editId && (
+          <div className="mt-2 border-t border-navy-100 pt-4">
+            <p className="label">Or upload video file(s) from your device</p>
+            <input
+              type="file"
+              accept="video/*"
+              multiple
+              ref={fileRef}
+              onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
+              className="text-sm"
+            />
+            <p className="mt-1 text-xs text-navy-400">
+              Best for short clips (max 4MB each). For longer videos, paste a
+              YouTube link above instead — it has no size limit.
+            </p>
+            {uploadFiles.length > 0 && (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={uploadLocalVideos}
+                  disabled={uploadBusy}
+                  className="btn-primary text-sm"
+                >
+                  {uploadBusy
+                    ? "Uploading…"
+                    : `Upload ${uploadFiles.length} video${uploadFiles.length === 1 ? "" : "s"}`}
+                </button>
+                {uploadMsg && <span className="text-sm text-navy-500">{uploadMsg}</span>}
+              </div>
+            )}
+          </div>
+        )}
       </form>
 
       {/* List */}
@@ -227,7 +216,7 @@ export default function VideosManager() {
           const places = [...new Set((usage[v._id] || []).map((p) => p.label))];
           return (
           <div key={v._id} className="card">
-            <div className="relative aspect-video overflow-hidden rounded-lg bg-navy-900">
+            <div className="relative aspect-video overflow-hidden rounded-lg">
               <VideoEmbed src={v.url} title={v.title} />
               <span className="absolute left-2 top-2 rounded bg-black/70 px-2 py-0.5 text-[10px] font-bold text-white">
                 #{i + 1} in order

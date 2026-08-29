@@ -35,7 +35,7 @@ export default async function VideosPage() {
                   key={v._id}
                   className="overflow-hidden rounded-2xl ring-1 ring-navy-100"
                 >
-                  <div className="aspect-video bg-navy-900">
+                  <div className="aspect-video">
                     <VideoEmbed src={v.url} title={v.title} />
                   </div>
                   <div className="p-6">

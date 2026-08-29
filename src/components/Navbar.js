@@ -19,20 +19,20 @@ export default function Navbar({ logo, siteName, whatsapp }) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-navy-100 bg-white/95 backdrop-blur">
-      <nav className="container flex h-16 items-center justify-between gap-4 md:h-20">
-        <Link href="/" className="group flex items-center gap-2.5">
+      <nav className="container flex h-20 items-center justify-between gap-4 md:h-24">
+        <Link href="/" className="group flex items-center gap-3">
           <LogoImage
             src={logo}
             alt={siteName}
-            width={56}
-            height={56}
+            width={80}
+            height={80}
             priority
             animate
-            className="h-11 w-11 md:h-14 md:w-14"
+            className="h-14 w-14 shadow-md ring-2 ring-brand-500/20 sm:h-16 sm:w-16 md:h-20 md:w-20"
           />
-          <span className="hidden text-lg font-extrabold leading-none tracking-tight text-navy-900 sm:block">
+          <span className="hidden text-xl font-extrabold leading-none tracking-tight text-navy-900 sm:block md:text-2xl">
             RESSA
-            <span className="block text-xs font-semibold text-brand-500">
+            <span className="block text-sm font-semibold text-brand-500">
               Project Nigeria
             </span>
           </span>
