@@ -5,8 +5,8 @@ import { Icon } from "@/components/icons";
 import Reveal from "@/components/anim/Reveal";
 import Confetti from "@/components/anim/Confetti";
 import CountUp from "@/components/anim/CountUp";
-import LogoImage from "@/components/LogoImage";
 import VideoEmbed from "@/components/VideoEmbed";
+import HeroSlider from "./HeroSlider";
 import EventsCarousel from "./EventsCarousel";
 import ProjectsMarquee from "./ProjectsMarquee";
 
@@ -22,13 +22,13 @@ function Wrap({ bg, className = "", children }) {
   return <section className={`${BG[bg] || BG.white} ${className}`}>{children}</section>;
 }
 
-export default async function SectionRenderer({ section, videos = [], fallbackImage }) {
+export default async function SectionRenderer({ section, videos = [], fallbackImage, logo, siteName }) {
   if (!section || section.visible === false) return null;
   const dark = section.bg === "dark" || section.bg === "brand" || section.bg === "gradient";
 
   switch (section.type) {
     case "hero":
-      return <Hero section={section} fallbackImage={fallbackImage} />;
+      return <HeroSlider section={section} logo={logo} siteName={siteName} />;
     case "marquee":
       return <Marquee section={section} />;
     case "stats":
@@ -56,65 +56,6 @@ export default async function SectionRenderer({ section, videos = [], fallbackIm
     default:
       return null;
   }
-}
-
-/* --------------------------------- HERO --------------------------------- */
-function Hero({ section, fallbackImage }) {
-  const heroImg = section.image || fallbackImage;
-  return (
-    <section className={`${BG[section.bg] || BG.gradient} relative overflow-hidden`}>
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="blob absolute -left-16 top-10 h-64 w-64 rounded-full bg-brand-500/30 blur-3xl" />
-        <div className="blob absolute right-0 top-1/2 h-72 w-72 rounded-full bg-pink-500/25 blur-3xl" style={{ animationDelay: "2s" }} />
-        <div className="blob absolute bottom-0 left-1/3 h-56 w-56 rounded-full bg-navy-400/30 blur-3xl" style={{ animationDelay: "4s" }} />
-      </div>
-      {heroImg && (
-        <div className="absolute inset-0 opacity-10">
-          <Image src={heroImg} alt="" fill className="object-cover" priority />
-        </div>
-      )}
-      <Confetti count={90} />
-      <div className="container relative grid items-center gap-10 py-16 md:grid-cols-2 md:py-24">
-        <div className="fade-up">
-          {section.eyebrow && (
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-200 ring-1 ring-white/20 backdrop-blur">
-              🎉 {section.eyebrow}
-            </span>
-          )}
-          {section.title && (
-            <h1 className="mt-4 text-3xl font-extrabold leading-tight drop-shadow-sm sm:text-4xl md:text-5xl">
-              {section.title}
-            </h1>
-          )}
-          {section.subtitle && (
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-navy-100 md:text-lg">
-              {section.subtitle}
-            </p>
-          )}
-          <div className="mt-8 flex flex-wrap gap-3">
-            {section.ctaText && (
-              <Link href={section.ctaHref || "/projects"} className="btn-primary">
-                {section.ctaText}
-              </Link>
-            )}
-            {section.ctaText2 && (
-              <Link href={section.ctaHref2 || "/contact"} className="btn border border-white/40 text-white hover:bg-white/10">
-                {section.ctaText2}
-              </Link>
-            )}
-          </div>
-        </div>
-        {heroImg && (
-          <div className="relative mx-auto hidden max-w-sm md:block">
-            <LogoImage animate width={120} height={120} className="absolute -left-10 -top-10 z-10 h-28 w-28 bg-white p-1 shadow-2xl" />
-            <div className="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10 transition duration-500 hover:scale-[1.02] hover:rotate-1">
-              <Image src={heroImg} alt={section.title || "Ressa Project Nigeria"} width={500} height={700} className="h-auto w-full object-cover" priority />
-            </div>
-          </div>
-        )}
-      </div>
-    </section>
-  );
 }
 
 /* -------------------------------- MARQUEE -------------------------------- */
@@ -343,7 +284,7 @@ function Faq({ section, dark }) {
 /* ---------------------------------- CTA ------------------------------------ */
 function Cta({ section }) {
   return (
-    <section className={`relative overflow-hidden ${BG[section.bg] || "bg-gradient-to-r from-brand-600 via-brand-500 to-pink-500"}`}>
+    <section className={`relative overflow-hidden ${BG[section.bg] || "bg-gradient-to-r from-brand-600 via-brand-500 to-navy-700"}`}>
       <Confetti count={70} />
       <Reveal className="container relative flex flex-col items-center gap-5 py-16 text-center text-white md:flex-row md:justify-between md:text-left">
         <div>

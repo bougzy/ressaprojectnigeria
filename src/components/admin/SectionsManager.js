@@ -365,7 +365,7 @@ function SectionThumb({ section, images, videos }) {
   const t = section.type;
   const box = "relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-navy-800 ring-2 ring-white";
 
-  if (["hero", "richtext", "imageBlock"].includes(t)) {
+  if (["richtext", "imageBlock"].includes(t)) {
     if (section.image) {
       return (
         <div className={box}>
@@ -380,7 +380,7 @@ function SectionThumb({ section, images, videos }) {
     );
   }
 
-  if (["carousel", "projectCards"].includes(t)) {
+  if (["hero", "carousel", "projectCards"].includes(t)) {
     const items = Array.isArray(section.items) ? section.items : [];
     if (!items.length) {
       return (
@@ -459,16 +459,17 @@ function SectionThumb({ section, images, videos }) {
    shown under the title so an admin doesn't have to open it to know. */
 function sectionSummary(section, images, videos) {
   const t = section.type;
-  if (["hero", "richtext", "imageBlock"].includes(t)) {
+  if (["richtext", "imageBlock"].includes(t)) {
     return section.image
       ? "Custom image set"
       : "No image chosen — falls back to a default photo";
   }
-  if (["carousel", "projectCards"].includes(t)) {
+  if (["hero", "carousel", "projectCards"].includes(t)) {
     const items = Array.isArray(section.items) ? section.items : [];
     const imgCount = items.filter((i) => i.type !== "video").length;
     const vidCount = items.filter((i) => i.type === "video").length;
-    if (!items.length) return "No slides added yet";
+    if (!items.length)
+      return t === "hero" ? "No slides added yet — falls back to a plain background" : "No slides added yet";
     const parts = [];
     if (imgCount) parts.push(`${imgCount} photo${imgCount === 1 ? "" : "s"}`);
     if (vidCount) parts.push(`${vidCount} video${vidCount === 1 ? "" : "s"}`);
@@ -508,7 +509,7 @@ function SectionEditor({ section, onChange }) {
   }
 
   const showItems = ["stats", "services", "testimonials", "faq", "marquee"].includes(t);
-  const showImage = ["hero", "richtext", "imageBlock"].includes(t);
+  const showImage = ["richtext", "imageBlock"].includes(t);
   const showBody = ["richtext", "cta", "imageBlock"].includes(t);
   const showTitle = t !== "marquee" && t !== "imageBlock";
   const showEyebrow = ["hero", "richtext", "services", "gallery", "video", "testimonials", "faq", "carousel", "projectCards"].includes(t);
@@ -517,7 +518,7 @@ function SectionEditor({ section, onChange }) {
   const showCta2 = t === "hero";
   const showGalleryOpts = t === "gallery";
   const showVideoOpts = t === "video";
-  const showCarouselOpts = t === "carousel";
+  const showCarouselOpts = t === "carousel" || t === "hero";
   const showProjectCardsOpts = t === "projectCards";
 
   return (
@@ -644,7 +645,7 @@ function SectionEditor({ section, onChange }) {
 
       {showCarouselOpts && (
         <MediaItemsEditor
-          label="Carousel slides"
+          label={t === "hero" ? "Hero slider images" : "Carousel slides"}
           items={Array.isArray(section.items) ? section.items : []}
           onChange={(items) => set("items", items)}
         />

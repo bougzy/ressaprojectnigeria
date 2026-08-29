@@ -156,7 +156,14 @@ export const DEFAULT_SECTIONS = [
     ctaHref: "/projects",
     ctaText2: "Talk to an Agent",
     ctaHref2: "/contact",
-    items: [],
+    items: [
+      { type: "image", src: "/images/office/office-flyer-summit.jpg", caption: "2026 RESSA Annual Summit — Teachers Must Become Landowners" },
+      { type: "image", src: "/images/10-scaled.jpg", caption: "Another proud landowner — RESSA Merit Award" },
+      { type: "image", src: "/images/office/office-exterior-1.jpg", caption: "Our head office in Lagos" },
+      { type: "image", src: "/images/1-scaled.jpg", caption: "Handing over deeds — one plot of land at a time" },
+      { type: "image", src: "/images/office/office-gate-banner.jpg", caption: "Teachers Must Become Landlords" },
+      { type: "image", src: "/images/2-scaled.jpg", caption: "Our members, celebrating together" },
+    ],
   },
   {
     key: "trust-marquee",

@@ -79,6 +79,24 @@ export async function ensureExtraImagesSeeded() {
 }
 
 /**
+ * One-time upgrade: if the homepage hero section still has no slider
+ * images (i.e. it predates the hero-carousel redesign), populate it with
+ * the current default slides. Never overwrites a hero that already has
+ * slides — including ones the admin has customised themselves — so this
+ * is safe to call on every request and only acts once per site.
+ */
+export async function ensureHeroSliderSeeded() {
+  await dbConnect();
+  const hero = await Section.findOne({ page: "home", key: "hero" });
+  if (!hero) return;
+  if (Array.isArray(hero.items) && hero.items.length > 0) return;
+  const def = DEFAULT_SECTIONS.find((s) => s.key === "hero");
+  if (!def?.items?.length) return;
+  hero.items = def.items;
+  await hero.save();
+}
+
+/**
  * Ensures every section defined in DEFAULT_SECTIONS exists in the DB for the
  * homepage — inserting only the ones that are missing (new defaults added in
  * an update), without touching or resetting anything the admin has already
@@ -101,6 +119,7 @@ export async function ensureHomeSectionsSeeded() {
       missing.map((s, i) => ({ ...s, page: "home", order: maxOrder + 1 + i }))
     );
   }
+  await ensureHeroSliderSeeded();
 }
 
 /**
