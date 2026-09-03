@@ -34,7 +34,7 @@ export const maxDuration = 60;
  * and file weight, regardless of the source phone/camera it came from.
  *
  * Fields:
- *   kind       "image" (default) or "video"
+ *   kind       "image" (default), "video", or "audio"
  *   files      one or more files (multiple selection supported)
  *   file       single file — kept for backward compatibility
  *   replaceId  if present, replaces that image's file in place instead of
@@ -55,6 +55,7 @@ export const maxDuration = 60;
 
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // per image, after client-side compression
 const MAX_VIDEO_BYTES = 4.5 * 1024 * 1024; // Vercel's own inbound request-body ceiling
+const MAX_AUDIO_BYTES = 8 * 1024 * 1024; // per audio track
 
 // Every uploaded video is transcoded to this same shape: max 480px on
 // its longer side, modest bitrate, mono audio. Keeps every clip in "Our
@@ -110,7 +111,12 @@ export async function POST(req) {
     const form = await req.formData();
     await dbConnect();
 
-    const kind = form.get("kind") === "video" ? "video" : "image";
+    const kind =
+      form.get("kind") === "video"
+        ? "video"
+        : form.get("kind") === "audio"
+        ? "audio"
+        : "image";
     const replaceId = form.get("replaceId");
     const singleFile = form.get("file");
 
@@ -141,6 +147,21 @@ export async function POST(req) {
       : [];
     if (!list.length) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+    }
+
+    /* ---------------- Create a single audio track (no DB record — the
+       caller stores the returned data URI directly on a Section, e.g. the
+       RESSA Anthem block) ---------------- */
+    if (kind === "audio") {
+      const file = list[0];
+      const bytes = Buffer.from(await file.arrayBuffer());
+      if (bytes.length > MAX_AUDIO_BYTES) {
+        return NextResponse.json(
+          { error: `That audio file is too large (max ${MAX_AUDIO_BYTES / (1024 * 1024)}MB).` },
+          { status: 400 }
+        );
+      }
+      return NextResponse.json({ audioSrc: toDataUri(file.type || "audio/mpeg", bytes) });
     }
 
     /* ---------------- Create video record(s) ---------------- */
