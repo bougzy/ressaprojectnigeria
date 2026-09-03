@@ -74,7 +74,7 @@ export default function VideosManager() {
       uploadFiles,
       { description: form.description },
       "video",
-      3.5 * 1024 * 1024
+      4.3 * 1024 * 1024
     );
     setUploadBusy(false);
     setUploadMsg("");
@@ -185,8 +185,11 @@ export default function VideosManager() {
               className="text-sm"
             />
             <p className="mt-1 text-xs text-navy-400">
-              Best for short clips (max 4MB each). For longer videos, paste a
-              YouTube link above instead — it has no size limit.
+              Each clip should be under ~4MB to upload — it's then
+              automatically compressed and resized for the site, so every
+              video ends up a consistent size regardless of the source. For
+              longer videos, paste a YouTube link above instead — it has no
+              size limit.
             </p>
             {uploadFiles.length > 0 && (
               <div className="mt-2 flex flex-wrap items-center gap-2">

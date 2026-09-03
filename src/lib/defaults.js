@@ -166,6 +166,24 @@ export const DEFAULT_SECTIONS = [
     ],
   },
   {
+    key: "our-conferences",
+    type: "carousel",
+    order: 0.5, // just under the hero slider (order 0), above everything else
+    visible: true,
+    bg: "white",
+    eyebrow: "Annual Events",
+    title: "Our Conferences",
+    subtitle: "Highlights from our yearly conferences and summits.",
+    items: [
+      {
+        type: "video",
+        src: "/videos/our-conferences-2026-edition.mp4",
+        title: "2026 Edition",
+        caption: "2026 Edition",
+      },
+    ],
+  },
+  {
     key: "trust-marquee",
     type: "marquee",
     order: 1,

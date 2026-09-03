@@ -114,10 +114,10 @@ export async function ensureHomeSectionsSeeded() {
   const existingKeys = new Set(existing.map((s) => s.key));
   const missing = DEFAULT_SECTIONS.filter((s) => !existingKeys.has(s.key));
   if (missing.length) {
-    const maxOrder = existing.reduce((m, s) => Math.max(m, s.order || 0), -1);
-    await Section.insertMany(
-      missing.map((s, i) => ({ ...s, page: "home", order: maxOrder + 1 + i }))
-    );
+    // Honour each new default's own `order` (so e.g. a section meant to sit
+    // just under the hero can be inserted there precisely) rather than
+    // always appending after everything that already exists.
+    await Section.insertMany(missing.map((s) => ({ ...s, page: "home" })));
   }
   await ensureHeroSliderSeeded();
 }

@@ -173,7 +173,7 @@ function MediaItemsEditor({ items, onChange, withTitle = false, label = "Slides"
       files,
       {},
       "video",
-      3.5 * 1024 * 1024
+      4.3 * 1024 * 1024
     );
     setUploadingVideos(false);
     setUploadMsg("");
@@ -314,7 +314,7 @@ function MediaItemsEditor({ items, onChange, withTitle = false, label = "Slides"
       </div>
       {uploadMsg && <p className="mt-1 text-xs text-navy-500">{uploadMsg}</p>}
       <p className="mt-1 text-xs text-navy-400">
-        Uploaded video clips work best under ~3.5MB each. For longer videos, paste a YouTube link instead.
+        Each clip should be under ~4MB to upload — it's then automatically compressed and resized for the site, so quality stays consistent across every video. For longer videos, paste a YouTube link instead.
       </p>
 
       {picking && (
