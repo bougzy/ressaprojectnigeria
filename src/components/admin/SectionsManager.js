@@ -17,6 +17,7 @@ const TYPE_LABELS = {
   carousel: "🎠 Photo & video carousel",
   imageBlock: "🖼️ Simple image block",
   projectCards: "🗂️ Our Projects (sliding cards)",
+  audio: "🎵 Audio player",
 };
 
 const BG_OPTIONS = [
@@ -491,6 +492,45 @@ function sectionSummary(section, images, videos) {
   return null;
 }
 
+function AudioPicker({ value, onChange }) {
+  const [uploading, setUploading] = useState(false);
+
+  async function handleFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const fd = new FormData();
+    fd.append("kind", "audio");
+    fd.append("file", file);
+    const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+    setUploading(false);
+    if (res.ok) {
+      const { audioSrc } = await res.json();
+      onChange(audioSrc);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      alert(err.error || "Upload failed");
+    }
+    e.target.value = "";
+  }
+
+  return (
+    <div>
+      <label className="label">Audio track</label>
+      <input
+        type="file"
+        accept="audio/*"
+        onChange={handleFile}
+        disabled={uploading}
+        className="text-sm"
+      />
+      {uploading && <span className="ml-2 text-xs font-medium text-brand-600">Uploading…</span>}
+      {value && <audio controls src={value} className="mt-3 w-full max-w-sm" />}
+      <p className="mt-1 text-xs text-navy-400">Max 8MB.</p>
+    </div>
+  );
+}
+
 function SectionEditor({ section, onChange }) {
   const [itemsText, setItemsText] = useState(JSON.stringify(section.items ?? [], null, 2));
   const t = section.type;
@@ -510,16 +550,17 @@ function SectionEditor({ section, onChange }) {
 
   const showItems = ["stats", "services", "testimonials", "faq", "marquee"].includes(t);
   const showImage = ["richtext", "imageBlock"].includes(t);
-  const showBody = ["richtext", "cta", "imageBlock"].includes(t);
+  const showBody = ["richtext", "cta", "imageBlock", "audio"].includes(t);
   const showTitle = t !== "marquee" && t !== "imageBlock";
-  const showEyebrow = ["hero", "richtext", "services", "gallery", "video", "testimonials", "faq", "carousel", "projectCards"].includes(t);
-  const showSubtitle = ["hero", "gallery", "carousel", "projectCards"].includes(t);
+  const showEyebrow = ["hero", "richtext", "services", "gallery", "video", "testimonials", "faq", "carousel", "projectCards", "audio"].includes(t);
+  const showSubtitle = ["hero", "gallery", "carousel", "projectCards", "audio"].includes(t);
   const showCta = ["hero", "richtext", "gallery", "cta"].includes(t);
   const showCta2 = t === "hero";
   const showGalleryOpts = t === "gallery";
   const showVideoOpts = t === "video";
   const showCarouselOpts = t === "carousel" || t === "hero";
   const showProjectCardsOpts = t === "projectCards";
+  const showAudioOpts = t === "audio";
 
   return (
     <div className="space-y-4 border-t border-navy-100 pt-4">
@@ -658,6 +699,10 @@ function SectionEditor({ section, onChange }) {
           items={Array.isArray(section.items) ? section.items : []}
           onChange={(items) => set("items", items)}
         />
+      )}
+
+      {showAudioOpts && (
+        <AudioPicker value={section.audioSrc} onChange={(v) => set("audioSrc", v)} />
       )}
     </div>
   );

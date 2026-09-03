@@ -50,7 +50,7 @@ const SectionSchema = new Schema(
   {
     key: { type: String, required: true, unique: true, index: true },
     // hero | marquee | stats | richtext | services | gallery | video | cta |
-    // testimonials | faq | carousel | imageBlock | projectCards
+    // testimonials | faq | carousel | imageBlock | projectCards | audio
     type: { type: String, required: true },
     page: { type: String, default: "home", index: true },
     order: { type: Number, default: 0 },
@@ -63,6 +63,7 @@ const SectionSchema = new Schema(
     body: { type: String, default: "" },
     image: { type: String, default: "" },
     imagePosition: { type: String, default: "right" }, // left | right
+    audioSrc: { type: String, default: "" }, // for type: "audio" — single track (path or data URI)
     ctaText: { type: String, default: "" },
     ctaHref: { type: String, default: "" },
     ctaText2: { type: String, default: "" },

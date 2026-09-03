@@ -50,6 +50,7 @@ export async function getVideos() {
 
 const HOME_LAYOUT_V2_FLAG = "migrationHomeLayoutV2";
 const HOME_LAYOUT_V3_FLAG = "migrationHomeLayoutV3";
+const HOME_LAYOUT_V4_FLAG = "migrationHomeLayoutV4";
 
 /** Renumbers every home section to match DEFAULT_SECTIONS' canonical key
  * order. Anything not in DEFAULT_SECTIONS (an admin's own custom section)
@@ -70,21 +71,21 @@ async function renumberHomeSectionsToDefaultOrder() {
   );
 }
 
-/** One-time addition: appends any new hero slide images from
- * DEFAULT_SECTIONS' hero.items that aren't already in the live hero
- * section's items (matched by src) — used when new photos are added to
- * the default hero slideshow after a site has already been seeded. Never
- * removes, replaces, or reorders existing slides. */
-async function appendNewHeroSlides() {
-  const hero = await Section.findOne({ page: "home", key: "hero" });
-  if (!hero) return;
-  const def = DEFAULT_SECTIONS.find((s) => s.key === "hero");
+/** One-time addition: appends any new slide items from DEFAULT_SECTIONS'
+ * <key>.items that aren't already in the live section's items (matched by
+ * src) — used when new photos/videos are added to a default carousel-style
+ * section after a site has already been seeded. Never removes, replaces,
+ * or reorders existing items. */
+async function appendMissingItems(key) {
+  const sec = await Section.findOne({ page: "home", key });
+  if (!sec) return;
+  const def = DEFAULT_SECTIONS.find((s) => s.key === key);
   if (!def?.items?.length) return;
-  const existingSrcs = new Set((hero.items || []).map((i) => i.src));
-  const toAdd = def.items.filter((i) => !existingSrcs.has(i.src));
+  const existingSrcs = new Set((sec.items || []).map((i) => i?.src).filter(Boolean));
+  const toAdd = def.items.filter((i) => i?.src && !existingSrcs.has(i.src));
   if (!toAdd.length) return;
-  hero.items = [...(hero.items || []), ...toAdd];
-  await hero.save();
+  sec.items = [...(sec.items || []), ...toAdd];
+  await sec.save();
 }
 
 /**
@@ -165,6 +166,11 @@ export async function ensureHomeSectionsSeeded() {
       { $set: { key: HOME_LAYOUT_V3_FLAG, value: true } },
       { upsert: true }
     );
+    await Setting.updateOne(
+      { key: HOME_LAYOUT_V4_FLAG },
+      { $set: { key: HOME_LAYOUT_V4_FLAG, value: true } },
+      { upsert: true }
+    );
     return;
   }
 
@@ -193,10 +199,23 @@ export async function ensureHomeSectionsSeeded() {
   const flag3 = await Setting.findOne({ key: HOME_LAYOUT_V3_FLAG }).lean();
   if (!flag3?.value) {
     await renumberHomeSectionsToDefaultOrder();
-    await appendNewHeroSlides();
+    await appendMissingItems("hero");
     await Setting.updateOne(
       { key: HOME_LAYOUT_V3_FLAG },
       { $set: { key: HOME_LAYOUT_V3_FLAG, value: true } },
+      { upsert: true }
+    );
+  }
+
+  // v4: add the new intro-carousel video clips (the new "RESSA Anthem"
+  // audio section itself is picked up automatically by the "missing"
+  // insert above, since it's a brand-new key).
+  const flag4 = await Setting.findOne({ key: HOME_LAYOUT_V4_FLAG }).lean();
+  if (!flag4?.value) {
+    await appendMissingItems("intro-carousel");
+    await Setting.updateOne(
+      { key: HOME_LAYOUT_V4_FLAG },
+      { $set: { key: HOME_LAYOUT_V4_FLAG, value: true } },
       { upsert: true }
     );
   }

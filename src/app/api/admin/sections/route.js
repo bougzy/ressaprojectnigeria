@@ -62,6 +62,7 @@ export async function POST(req) {
     body: body.body || "",
     image: body.image || "",
     imagePosition: body.imagePosition || "right",
+    audioSrc: body.audioSrc || "",
     ctaText: body.ctaText || "",
     ctaHref: body.ctaHref || "",
     ctaText2: body.ctaText2 || "",

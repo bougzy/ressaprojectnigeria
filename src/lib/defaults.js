@@ -199,6 +199,9 @@ export const DEFAULT_SECTIONS = [
       { type: "image", src: "/images/4-scaled.jpg", caption: "" },
       { type: "image", src: "/images/5-scaled.jpg", caption: "" },
       { type: "image", src: "/images/6-scaled.jpg", caption: "" },
+      { type: "video", src: "/videos/intro-clip-1.mp4", caption: "RESSA Merit Award presentation" },
+      { type: "video", src: "/videos/intro-clip-2.mp4", caption: "RESSA scholarship beneficiaries" },
+      { type: "video", src: "/videos/intro-clip-3.mp4", caption: "Behind the scenes with the RESSA Project team" },
     ],
   },
   {
@@ -435,6 +438,19 @@ export const DEFAULT_SECTIONS = [
       { type: "image", src: "/images/office/office-gate-banner.jpg", caption: "Ressa Real Estate Project Development — Teachers Must Become Landlords" },
       { type: "image", src: "/images/office/office-flyer-summit.jpg", caption: "2026 RESSA Annual Summit — Teachers Must Become Landowners" },
     ],
+  },
+  {
+    key: "ressa-anthem",
+    type: "audio",
+    order: 15,
+    visible: true,
+    bg: "light",
+    eyebrow: "Listen",
+    title: "The RESSA Anthem",
+    subtitle: "Our official anthem — celebrating every landlord and landlady in the making.",
+    audioSrc: "/audio/ressa-anthem.mp3",
+    body: "",
+    items: [],
   },
 ];
 

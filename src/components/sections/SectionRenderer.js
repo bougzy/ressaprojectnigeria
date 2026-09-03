@@ -53,6 +53,8 @@ export default async function SectionRenderer({ section, videos = [], fallbackIm
       return <ImageBlock section={section} fallbackImage={fallbackImage} />;
     case "projectCards":
       return <ProjectCardsSection section={section} dark={dark} />;
+    case "audio":
+      return <AudioSection section={section} dark={dark} />;
     default:
       return null;
   }
@@ -366,6 +368,31 @@ function ProjectCardsSection({ section, dark }) {
       </div>
       <div className="pb-2">
         <ProjectsMarquee items={items} />
+      </div>
+    </Wrap>
+  );
+}
+
+/* ------------------------------- RESSA ANTHEM ------------------------------- */
+function AudioSection({ section, dark }) {
+  if (!section.audioSrc) return null;
+  return (
+    <Wrap bg={section.bg} className="section">
+      <div className="container flex flex-col items-center text-center">
+        {section.eyebrow && <span className="eyebrow">🎵 {section.eyebrow}</span>}
+        {section.title && <h2 className="h-section mt-2">{section.title}</h2>}
+        {section.subtitle && (
+          <p className={`mt-3 max-w-2xl ${dark ? "text-navy-100" : "text-navy-600"}`}>{section.subtitle}</p>
+        )}
+        <div className="mt-8 w-full max-w-xl rounded-2xl bg-white p-6 shadow-lg ring-1 ring-navy-100">
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <audio controls className="w-full" src={section.audioSrc}>
+            Your browser does not support the audio element.
+          </audio>
+        </div>
+        {section.body && (
+          <p className={`mt-6 max-w-2xl text-sm ${dark ? "text-navy-200" : "text-navy-500"}`}>{section.body}</p>
+        )}
       </div>
     </Wrap>
   );

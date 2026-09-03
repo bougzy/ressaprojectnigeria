@@ -35,6 +35,7 @@ export const dynamic = "force-dynamic";
 
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // per image, after client-side compression
 const MAX_VIDEO_BYTES = 4 * 1024 * 1024; // per video — short clips only; use a YouTube link for anything longer
+const MAX_AUDIO_BYTES = 8 * 1024 * 1024; // per audio track
 
 function toDataUri(file, bytes) {
   const mime = file.type || "application/octet-stream";
@@ -50,7 +51,12 @@ export async function POST(req) {
     const form = await req.formData();
     await dbConnect();
 
-    const kind = form.get("kind") === "video" ? "video" : "image";
+    const kind =
+      form.get("kind") === "video"
+        ? "video"
+        : form.get("kind") === "audio"
+        ? "audio"
+        : "image";
     const replaceId = form.get("replaceId");
     const singleFile = form.get("file");
 
@@ -81,6 +87,21 @@ export async function POST(req) {
       : [];
     if (!list.length) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+    }
+
+    /* ---------------- Create a single audio track (no DB record — the
+       caller stores the returned data URI directly on a Section, e.g. the
+       RESSA Anthem block) ---------------- */
+    if (kind === "audio") {
+      const file = list[0];
+      const bytes = Buffer.from(await file.arrayBuffer());
+      if (bytes.length > MAX_AUDIO_BYTES) {
+        return NextResponse.json(
+          { error: `That audio file is too large (max ${MAX_AUDIO_BYTES / (1024 * 1024)}MB).` },
+          { status: 400 }
+        );
+      }
+      return NextResponse.json({ audioSrc: toDataUri(file, bytes) });
     }
 
     /* ---------------- Create video record(s) ---------------- */

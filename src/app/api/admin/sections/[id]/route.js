@@ -14,6 +14,7 @@ const ALLOWED = [
   "body",
   "image",
   "imagePosition",
+  "audioSrc",
   "ctaText",
   "ctaHref",
   "ctaText2",
