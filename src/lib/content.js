@@ -2,6 +2,40 @@ import { dbConnect } from "./mongodb";
 import { GalleryImage, Video, Setting, Section } from "./models";
 import { DEFAULT_SETTINGS, DEFAULT_SECTIONS, DEFAULT_EXTRA_IMAGES } from "./defaults";
 
+const HEAD_OFFICE_ADDRESS_V1_FLAG = "migrationHeadOfficeAddressV1";
+
+/**
+ * One-time correction: the live site was originally seeded with an old,
+ * incorrect head-office address. This updates just that first office entry
+ * to the corrected address/label, preserving anything else an admin may
+ * have already customised (their own added offices, edited phone numbers,
+ * etc.) — and only ever runs once, guarded by a Setting flag, so it won't
+ * clobber a deliberate edit made afterwards through the dashboard.
+ */
+async function ensureHeadOfficeAddressUpdated() {
+  const flag = await Setting.findOne({ key: HEAD_OFFICE_ADDRESS_V1_FLAG }).lean();
+  if (flag?.value) return;
+
+  const officesRow = await Setting.findOne({ key: "offices" }).lean();
+  const current = Array.isArray(officesRow?.value) ? officesRow.value : [];
+  const correctedHeadOffice = DEFAULT_SETTINGS.offices[0];
+
+  const updated = current.length
+    ? [{ ...current[0], ...correctedHeadOffice }, ...current.slice(1)]
+    : [correctedHeadOffice];
+
+  await Setting.updateOne(
+    { key: "offices" },
+    { $set: { key: "offices", value: updated } },
+    { upsert: true }
+  );
+  await Setting.updateOne(
+    { key: HEAD_OFFICE_ADDRESS_V1_FLAG },
+    { $set: { key: HEAD_OFFICE_ADDRESS_V1_FLAG, value: true } },
+    { upsert: true }
+  );
+}
+
 /**
  * Returns the merged settings object (DB values override defaults). Falls back
  * entirely to defaults if the database is unreachable so the public site never
@@ -10,6 +44,7 @@ import { DEFAULT_SETTINGS, DEFAULT_SECTIONS, DEFAULT_EXTRA_IMAGES } from "./defa
 export async function getSettings() {
   try {
     await dbConnect();
+    await ensureHeadOfficeAddressUpdated();
     const rows = await Setting.find({}).lean();
     const fromDb = {};
     for (const r of rows) fromDb[r.key] = r.value;

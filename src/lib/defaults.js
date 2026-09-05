@@ -16,9 +16,9 @@ export const ORG = {
   whatsapp: "2347043331195",
   offices: [
     {
-      label: "Lagos Office",
+      label: "Head Office",
       address:
-        "Suite 98, Tawakalitu Plaza, Opposite NIPCO Filling Station, Afolabi Bus-Stop, Lasu-Isheri Road, Lagos.",
+        "38A, RESSA Crescent, off Messiah Street, Idowu Egba Estate, opposite MacLara Hotels and Suites, Igando Road, Lagos, Nigeria.",
     },
     {
       label: "Ota Office",
